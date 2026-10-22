@@ -130,6 +130,8 @@ details[open] summary{border-bottom:1px solid var(--line)}
   color:var(--danger);font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;
   border-radius:999px;cursor:pointer;min-height:38px;white-space:nowrap}
 .del:active{background:rgba(185,28,28,.08)}
+.del.ic{flex:0 0 40px;width:40px;padding:0;justify-content:center;border-radius:11px}
+.del.ic svg{width:16px;height:16px}
 .del svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .fieldlbl{font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:4px;display:block}
 /* بطاقة مدرس */
@@ -1071,7 +1073,7 @@ function viewPlans(){
           ${pl.map((r,i)=>`<div class="plan-row">
             <input type="text" value="${esc(r.subject)}" data-f="s" data-c="${c.id}" data-i="${i}" placeholder="اسم المادة">
             <input type="number" min="0" max="${cap()}" value="${r.periods}" data-f="p" data-c="${c.id}" data-i="${i}">
-            <button class="x" data-rm="${c.id}" data-i="${i}">✕</button>
+            <button class="del ic" data-rm="${c.id}" data-i="${i}" aria-label="حذف المادة">${TRASH}</button>
           </div>`).join('')}
           <div class="btns">
             <button class="btn sec" data-addrow="${c.id}">+ مادة</button>
@@ -1095,14 +1097,22 @@ function viewPlans(){
       const d=t.closest('details'), tot=pl.reduce((a,b)=>a+Number(b.periods||0),0);
       const pill=d.querySelector('.pill');
       pill.textContent=tot+'/'+cap();
-      pill.style.color = tot===cap()?'var(--ok)':(tot>cap()?'var(--danger)':'var(--accent)');
+      const cc=S.classes.find(x=>x.id===t.dataset.c);
+      const dd=cc?planDiff(cc):null;
+      pill.style.color = tot>cap() ? 'var(--danger)' : ((dd&&dd.length)?'var(--accent)':'var(--ok)');
     }
   });
   app.onclick=(async e=>{
-    const t=e.target;
+    const t=e.target.closest('[data-addrow],[data-rm],[data-tpl],[data-copy]');
+    if(!t) return;
     const open=id=>{ render(); const d=app.querySelector(`details[data-c="${id}"]`); if(d) d.open=true; };
     if(t.dataset.addrow){ S.plans[t.dataset.addrow].push({subject:'',periods:1}); S.result=null; open(t.dataset.addrow); }
-    else if(t.dataset.rm){ S.plans[t.dataset.rm].splice(+t.dataset.i,1); S.result=null; open(t.dataset.rm); }
+    else if(t.dataset.rm){
+      const row=S.plans[t.dataset.rm][+t.dataset.i]||{};
+      const nm=String(row.subject||'').trim()||'هذه المادة';
+      if(!await askDel('ستُحذف "'+nm+'" ('+(row.periods||0)+' حصة) من خطة هذا الصف.','حذف المادة؟')) return;
+      S.plans[t.dataset.rm].splice(+t.dataset.i,1); S.result=null; open(t.dataset.rm); toast('تم حذف '+nm);
+    }
     else if(t.dataset.tpl){ const c=S.classes.find(x=>x.id===t.dataset.tpl);
       S.plans[c.id]=tplFor(c.stage,c.grade).map(([subject,periods])=>({subject,periods})); S.result=null; open(c.id); }
     else if(t.dataset.copy){ const src=S.plans[t.dataset.copy];
@@ -1140,7 +1150,7 @@ function viewOfficial(){
     ${rows.map((r,i)=>`<div class="plan-row">
       <input type="text" value="${esc(r[0])}" data-of="s" data-i="${i}" placeholder="اسم المادة">
       <input type="number" min="0" max="40" value="${Number(r[1])||0}" data-of="p" data-i="${i}">
-      <button class="x" data-ofrm="${i}">✕</button>
+      <button class="del ic" data-ofrm="${i}" aria-label="حذف المادة">${TRASH}</button>
     </div>`).join('')||'<p class="hint">لا توجد مواد.</p>'}
     <div class="btns">
       <button class="btn sec" id="ofAdd">+ مادة</button>
@@ -1148,16 +1158,13 @@ function viewOfficial(){
     </div>
   </div>
 
-  <div class="card noprint">
+  ${nEdited?`<div class="card noprint">
     <h2>إدارة الخطة</h2>
     <p class="hint">بعد تعديل الخطة، اذهب لتبويب «المواد» واضغط «إرجاع القوالب الرسمية» لتطبيقها على صفوف مدرستك الحالية.</p>
-    <div class="btns">
-      <button class="btn sec" id="ofExport">⬇︎ تصدير الخطة</button>
-      <button class="btn sec" id="ofImport">⬆︎ استيراد خطة</button>
-      ${nEdited?'<button class="btn dang" id="ofResetAll">استرجاع الخطة المدمجة كاملة</button>':''}
-    </div>
-    <input type="file" id="ofFile" accept="application/json" style="display:none">
-  </div>`;
+    <div class="btns"><button class="btn dang" id="ofResetAll">استرجاع الخطة المدمجة كاملة</button></div>
+  </div>`:`<div class="card noprint">
+    <p class="hint" style="margin:0">بعد تعديل الخطة، اذهب لتبويب «المواد» واضغط «إرجاع القوالب الرسمية» لتطبيقها على صفوف مدرستك الحالية.</p>
+  </div>`}`;
 
   const put=()=>{ DB.official=DB.official||{}; };
   const cur=()=>{ put(); if(!DB.official[pGrade]) DB.official[pGrade]=(TPL[pGrade]||[]).map(r=>[r[0],r[1]]);
@@ -1181,37 +1188,19 @@ function viewOfficial(){
   app.onclick=(async e=>{
     const b=e.target.closest('button'); if(!b) return;
     if(b.id==='ofAdd'){ cur().push(['',0]); saveDB(); return render(); }
-    if(b.dataset.ofrm!==undefined){ cur().splice(+b.dataset.ofrm,1); saveDB(); return render(); }
+    if(b.dataset.ofrm!==undefined){
+      const a=cur(), i=+b.dataset.ofrm, nm=String((a[i]||[])[0]||'').trim()||'هذه المادة';
+      if(!await askDel('ستُحذف "'+nm+'" من خطة '+pGrade+'.','حذف المادة من الخطة؟')) return;
+      a.splice(i,1); saveDB(); render(); toast('تم حذف '+nm); return;
+    }
     if(b.id==='ofReset'){
-      if(!await ask('إرجاع خطة "'+pGrade+'" للأصلية المدمجة؟')) return;
-      delete DB.official[pGrade]; saveDB(); return render();
+      if(!await ask('ستُستبدل تعديلاتك على "'+pGrade+'" بالأرقام الأصلية المدمجة.','إرجاع الخطة الأصلية؟')) return;
+      delete DB.official[pGrade]; saveDB(); render(); toast('تم إرجاع خطة '+pGrade); return;
     }
     if(b.id==='ofResetAll'){
-      if(!await ask('إرجاع كل الخطة للنسخة المدمجة وإلغاء تعديلاتك؟')) return;
-      DB.official={}; saveDB(); return render();
+      if(!await ask('ستُلغى تعديلاتك على كل الصفوف وترجع الخطة المدمجة بالكامل.','إرجاع الخطة المدمجة؟')) return;
+      DB.official={}; saveDB(); render(); toast('تم إرجاع الخطة المدمجة'); return;
     }
-    if(b.id==='ofExport'){
-      const all={}; Object.keys(GRADES).forEach(st=>GRADES[st].forEach(g=>{ const t=tplOf(g); if(t) all[g]=t; }));
-      return saveFile('الخطة-الوزارية.json','official-plan-'+today()+'.json',
-        JSON.stringify({type:'hesas-official-plan',plan:all},null,2),'application/json');
-    }
-    if(b.id==='ofImport') return document.getElementById('ofFile').click();
-  });
-
-  document.getElementById('ofFile').addEventListener('change',ev=>{
-    const f=ev.target.files[0]; if(!f) return;
-    const rd=new FileReader();
-    rd.onload=()=>{ try{
-        const o=JSON.parse(rd.result);
-        const pl=o.plan||o;
-        let n=0; DB.official=DB.official||{};
-        Object.keys(pl).forEach(g=>{
-          if(!Array.isArray(pl[g])) return;
-          DB.official[g]=pl[g].map(r=>[String(r[0]),Number(r[1])||0]); n++;
-        });
-        saveDB(); render(); say('تم استيراد خطة '+n+' صف ✓');
-      }catch(err){ say('الملف غير صالح'); } };
-    rd.readAsText(f);
   });
 }
 
