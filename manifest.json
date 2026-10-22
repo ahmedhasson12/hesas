@@ -1,5 +1,5 @@
 {
-  "id": "/mwzzi-alhisas/",
+  "id": "./",
   "name": "موزّع الحصص — جدول المدرسة الأسبوعي",
   "short_name": "موزّع الحصص",
   "description": "توزيع الحصص الأسبوعية على المدرسين بدون تضارب، لمدارس العراق الابتدائية والمتوسطة والإعدادية. يعمل بدون إنترنت.",
@@ -8,23 +8,78 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
   "background_color": "#f4f6f8",
   "theme_color": "#0f766e",
-  "categories": ["education", "productivity", "utilities"],
+  "categories": [
+    "education",
+    "productivity",
+    "utilities"
+  ],
   "prefer_related_applications": false,
   "icons": [
-    { "src": "icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "screenshots": [
-    { "src": "screen-mobile-1.png", "sizes": "412x860", "type": "image/png", "form_factor": "narrow", "label": "الجدول الأسبوعي لكل صف" },
-    { "src": "screen-mobile-2.png", "sizes": "412x860", "type": "image/png", "form_factor": "narrow", "label": "إدارة المدرسين وموادهم" },
-    { "src": "screen-wide-1.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "موزّع الحصص على شاشة واسعة" }
+    {
+      "src": "screen-mobile-1.png",
+      "sizes": "412x860",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "الجدول الأسبوعي لكل صف"
+    },
+    {
+      "src": "screen-mobile-2.png",
+      "sizes": "412x860",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "إدارة المدرسين وموادهم"
+    },
+    {
+      "src": "screen-wide-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "موزّع الحصص على شاشة واسعة"
+    }
   ]
 }
