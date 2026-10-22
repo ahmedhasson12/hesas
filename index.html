@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>موزّع الحصص</title>
+<meta name="description" content="توزيع حصص المدرسين أسبوعياً بدون تضارب">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="موزّع الحصص">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+:root{
+  --bg:#f4f6f8; --card:#ffffff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+  --brand:#0f766e; --brand-soft:#ccfbf1; --accent:#b45309; --danger:#b91c1c;
+  --ok:#15803d; --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.05);
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0b1220;--card:#121c2e;--ink:#e8edf5;--muted:#9aa6b8;--line:#243147;
+  --brand:#2dd4bf;--brand-soft:#0f3b38;--accent:#fbbf24;--danger:#f87171;--ok:#4ade80;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}
+}
+:root[data-theme="dark"]{--bg:#0b1220;--card:#121c2e;--ink:#e8edf5;--muted:#9aa6b8;--line:#243147;
+  --brand:#2dd4bf;--brand-soft:#0f3b38;--accent:#fbbf24;--danger:#f87171;--ok:#4ade80;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif;
+  font-size:15px; line-height:1.7; padding-bottom:90px;
+}
+header{
+  position:sticky;top:0;z-index:30;color:#fff;overflow:hidden;
+  background:linear-gradient(135deg,#0f766e 0%,#0d9488 42%,#1d4ed8 115%);
+  padding:calc(env(safe-area-inset-top) + 14px) 16px 16px;
+  border-radius:0 0 22px 22px;box-shadow:var(--shadow)
+}
+header::before,header::after{content:'';position:absolute;border-radius:50%;pointer-events:none}
+header::before{width:190px;height:190px;top:-96px;left:-54px;background:rgba(255,255,255,.10)}
+header::after{width:150px;height:150px;bottom:-96px;left:34%;background:rgba(255,255,255,.07)}
+header .in{position:relative;z-index:1}
+header h1{margin:0;font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+header .sub{font-size:12px;opacity:.9;margin-top:2px}
+nav{
+  position:sticky;top:0;z-index:20;display:flex;gap:6px;overflow-x:auto;
+  background:var(--card);border-bottom:1px solid var(--line);padding:8px 10px;
+  scrollbar-width:none
+}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  flex:0 0 auto;border:1px solid var(--line);background:transparent;color:var(--muted);
+  padding:8px 14px;border-radius:999px;font-size:13.5px;font-weight:600;font-family:inherit
+}
+nav button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+main{padding:12px 12px 0;max-width:900px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 4px;font-size:15.5px}
+.card .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 5px}
+input,select,textarea{
+  width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg);color:var(--ink);font-size:15px;font-family:inherit
+}
+input:focus,select:focus{outline:2px solid var(--brand);outline-offset:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1 1 140px;min-width:0}
+button.btn{
+  border:0;border-radius:10px;padding:11px 14px;font-size:14px;font-weight:700;
+  background:var(--brand);color:#fff;font-family:inherit;cursor:pointer
+}
+button.btn.sec{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+button.btn.dang{background:transparent;color:var(--danger);border:1px solid var(--line)}
+button.btn:active{transform:scale(.98)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{
+  border:1px solid var(--line);background:var(--bg);color:var(--muted);
+  padding:6px 11px;border-radius:999px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer
+}
+.chip.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+@media(prefers-color-scheme:dark){.chip.on{color:#fff}}
+.item{
+  border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;background:var(--bg)
+}
+.item .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item .nm{font-weight:700;font-size:14.5px}
+.item .meta{color:var(--muted);font-size:12.5px;margin-top:3px}
+.x{border:0;background:transparent;color:var(--danger);font-size:19px;padding:0 4px;cursor:pointer;line-height:1}
+.pill{display:inline-block;background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:700}
+@media(prefers-color-scheme:dark){.pill{color:#fff}}
+.warn{background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:10px 12px;font-size:13px;margin:8px 0}
+.err{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;border-radius:10px;padding:10px 12px;font-size:13px;margin:8px 0}
+.good{background:#f0fdf4;border:1px solid #86efac;color:#166534;border-radius:10px;padding:10px 12px;font-size:13px;margin:8px 0}
+@media(prefers-color-scheme:dark){
+ .warn{background:#3b2f05;border-color:#a16207;color:#fde68a}
+ .err{background:#3b0f0f;border-color:#b91c1c;color:#fecaca}
+ .good{background:#052e1a;border-color:#166534;color:#bbf7d0}
+}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:12.5px}
+th,td{border:1px solid var(--line);padding:7px 6px;text-align:center;vertical-align:middle}
+th{background:var(--bg);font-weight:700;font-size:12px;white-space:nowrap}
+td .s{font-weight:700;display:block;font-size:12.5px}
+td .t{color:var(--muted);font-size:11px;display:block;margin-top:1px}
+td.free{color:var(--muted);background:repeating-linear-gradient(45deg,transparent,transparent 5px,var(--bg) 5px,var(--bg) 10px)}
+.daycol{background:var(--bg);font-weight:700;white-space:nowrap}
+.total{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.plan-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.plan-row input[type=text]{flex:1 1 auto}
+.plan-row input[type=number]{flex:0 0 72px;text-align:center}
+details{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--bg);overflow:hidden}
+summary{padding:11px 12px;font-weight:700;font-size:14px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center}
+summary::-webkit-details-marker{display:none}
+details[open] summary{border-bottom:1px solid var(--line)}
+.dbody{padding:11px 12px}
+.sel{font-size:13.5px;padding:8px 10px}
+.foot{text-align:center;color:var(--muted);font-size:11.5px;padding:14px 10px 30px}
+.seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:999px;border:1px solid var(--line);margin-bottom:10px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:13px;padding:8px;border-radius:999px;font-family:inherit}
+.seg button.on{background:var(--brand);color:#fff}
+.dayp{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.dayp>div{flex:1 1 86px;text-align:center;border:1px solid var(--line);border-radius:10px;padding:6px 4px;background:var(--bg)}
+.dayp span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.dayp input{padding:7px 4px;text-align:center;font-weight:700;background:var(--card)}
+td.off{background:var(--line);opacity:.45}
+.ovl{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:22px}
+.ovl .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 16px;width:100%;max-width:360px;box-shadow:var(--shadow)}
+.ovl p{margin:0 0 14px;font-size:14.5px;line-height:1.8;white-space:pre-wrap}
+.ovl .btns{margin:0}
+.ovl .btns .btn{flex:1}
+.welcome{
+  position:relative;overflow:hidden;text-align:center;background:#fdf7ee;
+  border:1px solid var(--line);border-radius:var(--r);padding:26px 18px;margin-bottom:12px;box-shadow:var(--shadow)
+}
+@media(prefers-color-scheme:dark){.welcome{background:#101b2b}}
+.welcome::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(rgba(15,118,110,.25) 1.1px,transparent 1.2px);
+  background-size:17px 17px
+}
+@media(prefers-color-scheme:dark){.welcome::before{background-image:radial-gradient(rgba(45,212,191,.22) 1.1px,transparent 1.2px)}}
+.welcome>*{position:relative}
+.welcome .em{font-size:30px;letter-spacing:6px;line-height:1.2}
+.welcome h3{margin:10px 0 4px;font-size:16.5px}
+.welcome p{margin:0;color:var(--muted);font-size:13px}
+.cover{display:none}
+@media print{
+  header,nav,.noprint,.foot{display:none!important}
+  .cover{
+    display:flex!important;flex-direction:column;align-items:center;justify-content:center;
+    height:90vh;page-break-after:always;text-align:center;border:3px double #0f766e;border-radius:10px
+  }
+  .cover .t1{font-size:26px;font-weight:700;margin-bottom:6px}
+  .cover .t2{font-size:17px;margin-bottom:26px}
+  .cover .t3{font-size:12px;color:#444}
+  body{background:#fff;color:#000;padding:0;font-size:11px}
+  main{max-width:none;padding:0}
+  .card{box-shadow:none;border:0;padding:0;margin:0 0 10px;page-break-inside:avoid}
+  .tablewrap{overflow:visible;border:0}
+  table{min-width:0;font-size:10px}
+  th,td{border:1px solid #999;padding:4px 3px}
+  .printblock{page-break-after:always}
+  td.free{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="in">
+    <h1>🗓️ موزّع الحصص</h1>
+    <div class="sub" id="hdrSub">توزيع الحصص الأسبوعية على المدرسين بدون تضارب</div>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-t="school" class="on">المدرسة</button>
+  <button data-t="plans">المواد</button>
+  <button data-t="official">الخطة</button>
+  <button data-t="teachers">المدرسون</button>
+  <button data-t="assign">الإسناد</button>
+  <button data-t="result">الجدول</button>
+</nav>
+
+<main id="app"></main>
+<div class="foot noprint">يعمل بدون إنترنت · البيانات محفوظة داخل جهازك</div>
+
+<script>
+/* ===================== المحرك ===================== */
+function buildContext(data){
+  const D=data.days.length;
+  /* عدد حصص كل يوم؛ P هو أطول يوم */
+  const dayP=data.dayPeriods && data.dayPeriods.length===D
+    ? data.dayPeriods.map(x=>Math.max(0,+x||0))
+    : new Array(D).fill(data.periodsPerDay);
+  const P=Math.max.apply(null,dayP);
+  const lessons=data.lessons.map((l,i)=>({...l,idx:i}));
+  const lessonsByClass={};
+  data.classes.forEach(c=>lessonsByClass[c.id]=[]);
+  lessons.forEach(l=>{ if(!lessonsByClass[l.classId]) lessonsByClass[l.classId]=[]; lessonsByClass[l.classId].push(l.idx); });
+  const teachers={}; data.teachers.forEach(t=>teachers[t.id]=t);
+  const maxDay=lessons.map(l=>Math.max(data.maxSameSubjectPerDay||2, Math.ceil(l.periods/D)));
+  /* أقل عدد ممكن نظرياً لتلاصق المدرس: مجموع ما يزيد عن طاقة أيامه */
+  const pair={};
+  lessons.forEach(l=>{ const k=l.teacherId+'|'+l.classId; pair[k]=(pair[k]||0)+l.periods; });
+  let adjMin=0;
+  Object.keys(pair).forEach(k=>{
+    const t=teachers[k.split('|')[0]]; if(!t) return;
+    let lim=0;
+    for(let d=0;d<D;d++) if(!(t.offDays&&t.offDays.indexOf(d)>-1)) lim+=Math.ceil(dayP[d]/2);
+    if(pair[k]>lim) adjMin+=pair[k]-lim;
+  });
+  /* طول يوم كل صف على حدة: صف لا يحتاج الحصة السابعة لا تُعرض له */
+  const cdp={};
+  data.classes.forEach(c=>{
+    const v=(data.classDayPeriods||{})[c.id];
+    cdp[c.id]=(v&&v.length===D)?v.map(x=>Math.max(0,+x||0)):dayP.slice();
+  });
+  return {D,P,dayP,cdp,lessons,lessonsByClass,teachers,maxDay,classes:data.classes,data,adjMin,
+          noBack:data.noBackToBack!==false, noBackT:data.noSameTeacherBackToBack===true};
+}
+function attemptSchedule(ctx,rnd,noBack,noBackT){
+  const {D,P,dayP,cdp,lessons,lessonsByClass,teachers,maxDay,classes}=ctx, data=ctx.data;
+  const remaining=lessons.map(l=>l.periods);
+  const dailyCount=lessons.map(()=>new Array(D).fill(0));
+  const teacherDaily={}; Object.keys(teachers).forEach(id=>teacherDaily[id]=new Array(D).fill(0));
+  const jitter=lessons.map(()=>rnd());
+  const grid={}; classes.forEach(c=>grid[c.id]=Array.from({length:D},()=>new Array(P).fill(-1)));
+  const score=li=>remaining[li]*10+jitter[li];
+  /* نرتّب بالحصة أولاً ثم اليوم: تمتلئ الحصص الأولى بكل الأيام قبل الأخيرة */
+  for(let p=0; p<P; p++){
+    for(let d=0; d<D; d++){
+      if(p>=dayP[d]) continue;            // خارج دوام هذا اليوم
+      const cands=classes.map(c=>{
+        if(p>=cdp[c.id][d]) return [];        // خارج دوام هذا الصف
+        const prev = p>0 ? grid[c.id][d][p-1] : -1;   // الحصة السابقة بنفس اليوم
+        const prevSubj = prev>-1 ? lessons[prev].subject : null;
+        const prevT    = prev>-1 ? lessons[prev].teacherId : null;
+        let list=(lessonsByClass[c.id]||[]).filter(li=>{
+          if(remaining[li]<=0) return false;
+          if(dailyCount[li][d]>=maxDay[li]) return false;
+          if(noBack && prevSubj && lessons[li].subject===prevSubj) return false;
+          if(noBackT && prevT && lessons[li].teacherId===prevT) return false;
+          const T=teachers[lessons[li].teacherId]; if(!T) return false;
+          if(T.offDays && T.offDays.indexOf(d)!==-1) return false;
+          if(teacherDaily[T.id][d] >= Math.min(T.maxPerDay||dayP[d], dayP[d])) return false;
+          return true;
+        });
+        const best=new Map();
+        list.forEach(li=>{ const t=lessons[li].teacherId, cur=best.get(t);
+          if(cur===undefined||score(li)>score(cur)) best.set(t,li); });
+        list=Array.from(best.values());
+        /* دائماً نفضّل مدرساً غير مدرس الحصة السابقة، حتى حين لا نمنعه */
+        const rep2=li=>(prevT && lessons[li].teacherId===prevT)?1:0;
+        list.sort((a,b)=>(rep2(a)-rep2(b))||(score(b)-score(a)));
+        return list;
+      });
+      const matchTeacher=new Map(), chosen=new Array(classes.length).fill(-1);
+      const tryAssign=(ci,visited)=>{
+        for(const li of cands[ci]){
+          const t=lessons[li].teacherId;
+          if(visited.has(t)) continue;
+          visited.add(t);
+          const occ=matchTeacher.get(t);
+          if(occ===undefined||tryAssign(occ,visited)){ matchTeacher.set(t,ci); chosen[ci]=li; return true; }
+        }
+        return false;
+      };
+      /* الأولوية للصف الأكثر حاجة (هامشه أضيق) ثم الأقل خيارات */
+      const need=classes.map(c=>(lessonsByClass[c.id]||[]).reduce((x,li)=>x+Math.max(0,remaining[li]),0));
+      const order=classes.map((_,i)=>i).sort((a,b)=>(need[b]-need[a])||(cands[a].length-cands[b].length));
+      for(const ci of order) tryAssign(ci,new Set());
+      for(let ci=0; ci<classes.length; ci++){
+        const li=chosen[ci]; if(li<0) continue;
+        remaining[li]--; dailyCount[li][d]++; teacherDaily[lessons[li].teacherId][d]++;
+        grid[classes[ci].id][d][p]=li;
+      }
+    }
+  }
+  return {grid,remaining,leftover:remaining.reduce((a,b)=>a+b,0),lessons,D,P,days:data.days};
+}
+/* ترقيع: يحاول إقحام الحصص المتبقية بمبادلتها مع حصص موجودة بنفس الصف */
+function repair(res,ctx,noBack){
+  const {D,dayP,cdp,lessons,maxDay,classes,teachers}=ctx, grid=res.grid, remaining=res.remaining;
+  const okBack=(cid,d,p,li)=>{
+    if(!noBack) return true;
+    const s=lessons[li].subject;
+    const a=p>0?grid[cid][d][p-1]:-1, b=p+1<cdp[cid][d]?grid[cid][d][p+1]:-1;
+    return !((a>-1&&lessons[a].subject===s)||(b>-1&&lessons[b].subject===s));
+  };
+  const P=ctx.P, busy={}, dayCnt=lessons.map(()=>new Array(D).fill(0));
+  const B=id=>(busy[id]||(busy[id]=Array.from({length:D},()=>new Array(P).fill(false))));
+  classes.forEach(c=>{ for(let d=0;d<D;d++) for(let p=0;p<cdp[c.id][d];p++){
+    const li=grid[c.id][d][p]; if(li<0) continue;
+    B(lessons[li].teacherId)[d][p]=true; dayCnt[li][d]++;
+  }});
+  const okDay=(tid,d)=>{ const t=teachers[tid]; return !(t&&t.offDays&&t.offDays.indexOf(d)>-1); };
+  const free=(tid,d,p)=>!B(tid)[d][p] && okDay(tid,d);
+
+  const tryPlace=li=>{
+    const cid=lessons[li].classId, tid=lessons[li].teacherId, empties=[];
+    for(let d=0;d<D;d++) for(let p=0;p<cdp[cid][d];p++) if(grid[cid][d][p]<0) empties.push([d,p]);
+    for(const [d,p] of empties)
+      if(dayCnt[li][d]<maxDay[li] && free(tid,d,p) && okBack(cid,d,p,li)){
+        grid[cid][d][p]=li; B(tid)[d][p]=true; dayCnt[li][d]++; remaining[li]--; return true;
+      }
+    for(const [d,p] of empties)
+      for(let d1=0; d1<D; d1++) for(let p1=0;p1<cdp[cid][d1];p1++){
+        const m=grid[cid][d1][p1]; if(m<0) continue;
+        const mt=lessons[m].teacherId;
+        if(!free(mt,d,p) || !free(tid,d1,p1)) continue;
+        if(d!==d1 && (dayCnt[m][d]+1>maxDay[m] || dayCnt[li][d1]+1>maxDay[li])) continue;
+        if(!okBack(cid,d,p,m) || !okBack(cid,d1,p1,li)) continue;
+        B(mt)[d1][p1]=false; B(mt)[d][p]=true;
+        if(d!==d1){ dayCnt[m][d1]--; dayCnt[m][d]++; }
+        grid[cid][d][p]=m; grid[cid][d1][p1]=li;
+        B(tid)[d1][p1]=true; dayCnt[li][d1]++; remaining[li]--;
+        return true;
+      }
+    return false;
+  };
+  for(let pass=0; pass<4; pass++){
+    let moved=false;
+    for(let li=0; li<lessons.length; li++)
+      while(remaining[li]>0 && tryPlace(li)) moved=true;
+    if(!moved) break;
+  }
+  res.leftover=remaining.reduce((a,b)=>a+b,0);
+  return res;
+}
+/* تسوية الأيام: يوزّع حصص الصف على الأيام بالتساوي قدر الإمكان،
+   فتبقى الفراغات بآخر اليوم الأطول بدل أن يصير يوم 7 ويوم 5 */
+function levelDays(res,ctx){
+  const {D,dayP,cdp,lessons,maxDay,classes,teachers,P,noBack}=ctx, grid=res.grid;
+  const busy={}, dayCnt=lessons.map(()=>new Array(D).fill(0));
+  const B=id=>(busy[id]||(busy[id]=Array.from({length:D},()=>new Array(P).fill(false))));
+  classes.forEach(c=>{ for(let d=0;d<D;d++) for(let p=0;p<cdp[c.id][d];p++){
+    const li=grid[c.id][d][p]; if(li<0) continue;
+    B(lessons[li].teacherId)[d][p]=true; dayCnt[li][d]++; }});
+  const offDay=(tid,d)=>{ const t=teachers[tid]; return !!(t&&t.offDays&&t.offDays.indexOf(d)>-1); };
+
+  classes.forEach(c=>{
+    const cid=c.id;
+    const CD=cdp[cid];
+    const cnt=d=>{ let n=0; for(let p=0;p<CD[d];p++) if(grid[cid][d][p]>-1) n++; return n; };
+    const total=(()=>{ let n=0; for(let d=0;d<D;d++) n+=cnt(d); return n; })();
+
+    /* الهدف: توزيع متساوٍ، والزيادة لليوم الأطول */
+    const target=new Array(D).fill(0);
+    for(let k=0;k<total;k++){
+      let pick=-1;
+      for(let d=0;d<D;d++){
+        if(target[d]>=CD[d]) continue;
+        if(pick<0 || target[d]<target[pick] || (target[d]===target[pick] && CD[d]>CD[pick])) pick=d;
+      }
+      if(pick<0) break; target[pick]++;
+    }
+
+    for(let guard=0; guard<80; guard++){
+      let from=-1, to=-1;
+      for(let d=0;d<D;d++){ if(cnt(d)>target[d] && from<0) from=d; if(cnt(d)<target[d] && to<0) to=d; }
+      if(from<0||to<0) break;
+      let moved=false;
+      for(let p1=CD[from]-1; p1>=0 && !moved; p1--){
+        const li=grid[cid][from][p1]; if(li<0) continue;
+        const tid=lessons[li].teacherId;
+        if(offDay(tid,to)) continue;
+        if(dayCnt[li][to]+1>maxDay[li]) continue;
+        for(let p2=0;p2<CD[to];p2++){
+          if(grid[cid][to][p2]>-1) continue;
+          if(B(tid)[to][p2]) continue;
+          if(noBack){
+            const sj=lessons[li].subject;
+            const a=p2>0?grid[cid][to][p2-1]:-1, b=p2+1<CD[to]?grid[cid][to][p2+1]:-1;
+            if((a>-1&&lessons[a].subject===sj)||(b>-1&&lessons[b].subject===sj)) continue;
+          }
+          grid[cid][from][p1]=-1; grid[cid][to][p2]=li;
+          B(tid)[from][p1]=false; B(tid)[to][p2]=true;
+          dayCnt[li][from]--; dayCnt[li][to]++;
+          moved=true; break;
+        }
+      }
+      if(!moved) break;
+    }
+  });
+  return res;
+}
+
+/* عدد الفراغات التي تقع في وسط اليوم (بعدها حصة) — صفر = مثالي */
+function holeCount(res,ctx){
+  const {D,dayP,cdp,classes}=ctx, grid=res.grid; let h=0;
+  classes.forEach(c=>{ for(let d=0;d<D;d++){
+    let last=-1;
+    for(let p=cdp[c.id][d]-1;p>=0;p--) if(grid[c.id][d][p]>-1){ last=p; break; }
+    for(let p=0;p<last;p++) if(grid[c.id][d][p]<0) h++;
+  }});
+  return h;
+}
+
+/* قياس انحراف الأيام عن التوزيع المتساوي — صفر = مثالي */
+function balanceScore(res,ctx){
+  const {D,dayP,cdp,classes}=ctx, grid=res.grid; let bad=0;
+  classes.forEach(c=>{
+    const cnt=[], cap=[];
+    let total=0;
+    for(let d=0;d<D;d++){ let n=0; for(let p=0;p<cdp[c.id][d];p++) if(grid[c.id][d][p]>-1) n++;
+      cnt.push(n); cap.push(cdp[c.id][d]); total+=n; }
+    const target=new Array(D).fill(0);
+    for(let k=0;k<total;k++){
+      let pick=-1;
+      for(let d=0;d<D;d++){ if(target[d]>=cap[d]) continue;
+        if(pick<0||target[d]<target[pick]||(target[d]===target[pick]&&cap[d]>cap[pick])) pick=d; }
+      if(pick<0) break; target[pick]++;
+    }
+    for(let d=0;d<D;d++) bad+=Math.abs(cnt[d]-target[d]);
+  });
+  return bad/2;
+}
+
+/* كبس: يسحب الحصص المتأخرة إلى الفراغات الأبكر حتى تبقى الفراغات بآخر الدوام */
+function compact(res,ctx){
+  const {D,dayP,cdp,lessons,maxDay,classes,teachers,P,noBack}=ctx, grid=res.grid;
+  const okBack=(cid,d,p,li,skip)=>{
+    if(!noBack) return true;
+    const s=lessons[li].subject;
+    const a=p>0?grid[cid][d][p-1]:-1, b=p+1<cdp[cid][d]?grid[cid][d][p+1]:-1;
+    const bad=x=>x>-1 && !(skip&&skip[0]===d&&skip[1]===p+ (x===a?-1:1)) && lessons[x].subject===s;
+    return !(bad(a)||bad(b));
+  };
+  const busy={}, dayCnt=lessons.map(()=>new Array(D).fill(0));
+  const B=id=>(busy[id]||(busy[id]=Array.from({length:D},()=>new Array(P).fill(false))));
+  classes.forEach(c=>{ for(let d=0;d<D;d++) for(let p=0;p<cdp[c.id][d];p++){
+    const li=grid[c.id][d][p]; if(li<0) continue;
+    B(lessons[li].teacherId)[d][p]=true; dayCnt[li][d]++;
+  }});
+  const free=(tid,d,p)=>{ const t=teachers[tid];
+    return !B(tid)[d][p] && !(t&&t.offDays&&t.offDays.indexOf(d)>-1); };
+  classes.forEach(c=>{
+    for(let guard=0; guard<60; guard++){
+      const empt=[], full=[];
+      for(let d=0;d<D;d++) for(let p=0;p<cdp[c.id][d];p++)
+        (grid[c.id][d][p]<0?empt:full).push([d,p]);
+      empt.sort((a,b)=>a[1]-b[1]); full.sort((a,b)=>b[1]-a[1]);
+      let moved=false;
+      for(const [d,p] of empt){
+        for(const [d2,p2] of full){
+          if(p2<=p) continue;
+          const li=grid[c.id][d2][p2], tid=lessons[li].teacherId;
+          if(!free(tid,d,p)) continue;
+          if(d!==d2 && dayCnt[li][d]+1>maxDay[li]) continue;
+          if(!okBack(c.id,d,p,li,[d2,p2])) continue;
+          B(tid)[d2][p2]=false; B(tid)[d][p]=true;
+          if(d!==d2){ dayCnt[li][d2]--; dayCnt[li][d]++; }
+          grid[c.id][d][p]=li; grid[c.id][d2][p2]=-1;
+          moved=true; break;
+        }
+        if(moved) break;
+      }
+      if(!moved) break;
+    }
+  });
+  return res;
+}
+/* يعدّ الحصص التي يأخذها نفس المدرس متتاليةً في نفس الصف */
+function countTeacherAdj(grid,ctx){
+  const {D,dayP,cdp,lessons,classes}=ctx; let n=0;
+  classes.forEach(c=>{ for(let d=0;d<D;d++) for(let p=1;p<cdp[c.id][d];p++){
+    const a=grid[c.id][d][p-1], b=grid[c.id][d][p];
+    if(a>-1&&b>-1&&lessons[a].teacherId===lessons[b].teacherId) n++;
+  }});
+  return n;
+}
+
+/* صقل: يبادل حصتين داخل الصف نفسه لتقليل تلاصق المدرس، مع حفظ كل القيود */
+function polish(res,ctx){
+  const {D,dayP,cdp,lessons,maxDay,classes,teachers,P,noBack}=ctx, grid=res.grid;
+  const busy={}, dayCnt=lessons.map(()=>new Array(D).fill(0));
+  const B=id=>(busy[id]||(busy[id]=Array.from({length:D},()=>new Array(P).fill(false))));
+  classes.forEach(c=>{ for(let d=0;d<D;d++) for(let p=0;p<cdp[c.id][d];p++){
+    const li=grid[c.id][d][p]; if(li<0) continue;
+    B(lessons[li].teacherId)[d][p]=true; dayCnt[li][d]++;
+  }});
+  const offDay=(tid,d)=>{ const t=teachers[tid]; return !!(t&&t.offDays&&t.offDays.indexOf(d)>-1); };
+
+  /* هل يصلح وضع الدرس li في (d,p) بعد تفريغ موضعه القديم (od,op)؟ */
+  const fits=(cid,li,d,p,od,op,other)=>{
+    if(li<0) return true;
+    const tid=lessons[li].teacherId;
+    if(offDay(tid,d)) return false;
+    if(B(tid)[d][p] && !(d===od&&p===op) && !(other>-1&&lessons[other].teacherId===tid&&d===od)) {
+      // المكان مشغول بغير هذا الدرس نفسه
+      if(!(d===od&&p===op)) return false;
+    }
+    if(d!==od && dayCnt[li][d]+1>maxDay[li]) return false;
+    if(noBack){                       // لا تتكرر المادة بحصتين متتاليتين
+      const s=lessons[li].subject;
+      const look=q=>{ if(q<0||q>=cdp[cid][d]) return -1;
+        if(d===od&&q===op) return -1;          // موضعه القديم سيفرغ
+        if(d===d&&q===p) return -1;
+        return grid[cid][d][q]; };
+      const a=look(p-1), b=look(p+1);
+      if((a>-1&&lessons[a].subject===s)||(b>-1&&lessons[b].subject===s)) return false;
+    }
+    return true;
+  };
+
+  const adjOf=cid=>{ let n=0; for(let d=0;d<D;d++) for(let p=1;p<cdp[cid][d];p++){
+    const a=grid[cid][d][p-1],b=grid[cid][d][p];
+    if(a>-1&&b>-1&&lessons[a].teacherId===lessons[b].teacherId) n++; } return n; };
+
+  classes.forEach(c=>{
+    const cid=c.id;
+    for(let pass=0; pass<40; pass++){
+      let before=adjOf(cid); if(!before) break;
+      let done=false;
+      outer:
+      for(let d1=0; d1<D && !done; d1++) for(let p1=0;p1<cdp[cid][d1];p1++){
+        const A=grid[cid][d1][p1];
+        for(let d2=0; d2<D; d2++) for(let p2=0;p2<cdp[cid][d2];p2++){
+          if(d1===d2&&p1===p2) continue;
+          const Bl=grid[cid][d2][p2];
+          if(A<0&&Bl<0) continue;
+          if(!fits(cid,A,d2,p2,d1,p1,Bl)) continue;
+          if(!fits(cid,Bl,d1,p1,d2,p2,A)) continue;
+          // جرّب المبادلة
+          grid[cid][d1][p1]=Bl; grid[cid][d2][p2]=A;
+          const after=adjOf(cid);
+          if(after<before){
+            if(A>-1){ B(lessons[A].teacherId)[d1][p1]=false; B(lessons[A].teacherId)[d2][p2]=true;
+                      if(d1!==d2){ dayCnt[A][d1]--; dayCnt[A][d2]++; } }
+            if(Bl>-1){ B(lessons[Bl].teacherId)[d2][p2]=false; B(lessons[Bl].teacherId)[d1][p1]=true;
+                       if(d1!==d2){ dayCnt[Bl][d2]--; dayCnt[Bl][d1]++; } }
+            done=true; break outer;
+          }
+          grid[cid][d1][p1]=A; grid[cid][d2][p2]=Bl;   // تراجع
+        }
+      }
+      if(!done) break;
+    }
+  });
+  return res;
+}
+
+/* الحد النظري: أقصى حصص يمكن أن يأخذها مدرس في صف بدون تلاصق */
+function adjacencyReport(){
+  const bl=buildLessons(), pair={};
+  bl.lessons.forEach(l=>{ const k=l.teacherId+'|'+l.classId; pair[k]=(pair[k]||0)+l.periods; });
+  const out=[];
+  Object.keys(pair).forEach(k=>{
+    const [tid,cid]=k.split('|');
+    const t=S.teachers.find(x=>x.id===tid); if(!t) return;
+    const limit=S.days.reduce((a,d,di)=>a+(((t.offDays||[]).indexOf(di)>-1)?0:Math.ceil(pOf(d)/2)),0);
+    if(pair[k]>limit){
+      const c=S.classes.find(x=>x.id===cid);
+      out.push({teacher:t.name, cls:c?c.name:'—', load:pair[k], limit, over:pair[k]-limit});
+    }
+  });
+  return out.sort((a,b)=>b.over-a.over);
+}
+
+function generateSchedule(data,maxAttempts){
+  const ctx=buildContext(data);
+  let seed=(Date.now()%2147483647)||12345;
+  const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return (seed/0x7fffffff)*3; };
+  let best=null; const limit=maxAttempts||500, t0=Date.now();
+  /* مراحل: الأشد قيداً أولاً، ثم نرخي تدريجياً عند التعذّر */
+  const phase=a=> ctx.noBackT
+      ? (a<limit*0.45 ? [ctx.noBack,true] : a<limit*0.75 ? [ctx.noBack,false] : [false,false])
+      : (a<limit*0.75 ? [ctx.noBack,false] : [false,false]);
+  let bestScore=Infinity, bestAdj=0;
+  for(let a=0;a<limit;a++){
+    const [nb,nbt]=phase(a);
+    const res=attemptSchedule(ctx,rnd,nb,nbt);
+    if(res.leftover>0) repair(res,ctx,nb);
+    if(res.leftover===0){
+      if(ctx.noBackT){ polish(res,ctx); }
+      levelDays(res,ctx);                   // أيام متساوية
+      compact(res,ctx);                     // الفراغات لآخر الدوام
+      const adj=ctx.noBackT?countTeacherAdj(res.grid,ctx):0;
+      const bal=balanceScore(res,ctx), hol=holeCount(res,ctx);
+      const sc=bal*1e6+hol*1e3+adj;         // التوازن، ثم فراغات الوسط، ثم التلاصق
+      if(sc<bestScore){ bestScore=sc; bestAdj=adj; best=res;
+        best.teacherAdj=adj; best.balance=bal; best.holes=hol; }
+      if(bal===0 && hol===0 && adj<=ctx.adjMin)
+        return {...res,attempts:a+1,ok:true,teacherAdj:adj,adjMin:ctx.adjMin,balance:0,holes:0};
+    }else if(!best||best.leftover===undefined||res.leftover<best.leftover){
+      if(!best||best.leftover>0) best=res;
+    }
+    if(Date.now()-t0>6000) break;
+  }
+  if(!best) return {leftover:0,ok:false};
+  if(best.leftover>0){ levelDays(best,ctx); compact(best,ctx); return {...best,ok:false,teacherAdj:countTeacherAdj(best.grid,ctx)}; }
+  return {...best,ok:true,teacherAdj:bestAdj,adjMin:ctx.adjMin,balance:best.balance,holes:best.holes};
+}
+/* ===================== البيانات ===================== */
+const DAYS_ALL=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const GRADES={
+ 'ابتدائية':['الأول الابتدائي','الثاني الابتدائي','الثالث الابتدائي','الرابع الابتدائي','الخامس الابتدائي','السادس الابتدائي'],
+ 'متوسطة':['الأول المتوسط','الثاني المتوسط','الثالث المتوسط'],
+ 'إعدادية':['الرابع العلمي','الرابع الأدبي','الخامس العلمي','الخامس الأدبي','السادس العلمي','السادس الأدبي']
+};
+/* المناهج الرسمية لكل صف — عدد الحصص مقترح ومجموعه 30، وكلها قابلة للتعديل */
+const OPT='اللغة الفرنسية / الكردية (اختياري)';
+const TPL={
+ 'الأول الابتدائي':[['التربية الإسلامية',2],['اللغة العربية',9],['اللغة الإنكليزية',3],['الرياضيات',6],['العلوم',4],['التربية الأخلاقية',2],['التربية الفنية والنشيد',2],['التربية الرياضية',2]],
+ 'الثاني الابتدائي':[['التربية الإسلامية',3],['اللغة العربية',8],['اللغة الإنكليزية',3],['الرياضيات',6],['العلوم',4],['التربية الأخلاقية',2],['التربية الفنية والنشيد',2],['التربية الرياضية',2]],
+ 'الثالث الابتدائي':[['التربية الإسلامية',3],['اللغة العربية',9],['اللغة الإنكليزية',3],['الرياضيات',6],['العلوم',4],['التربية الفنية والنشيد',2],['التربية الرياضية',3]],
+ 'الرابع الابتدائي':[['التربية الإسلامية',3],['اللغة العربية',8],['اللغة الإنكليزية',3],['الرياضيات',6],['العلوم',4],['الاجتماعيات',2],['التربية الفنية والنشيد',2],['التربية الرياضية',2]],
+ 'الخامس الابتدائي':[['التربية الإسلامية',3],['اللغة العربية',6],['اللغة الإنكليزية',4],['الرياضيات',6],['العلوم',4],['الاجتماعيات',3],['التربية الفنية والنشيد',2],['التربية الرياضية',2]],
+ 'السادس الابتدائي':[['التربية الإسلامية',3],['اللغة العربية',6],['اللغة الإنكليزية',5],['الرياضيات',6],['العلوم',4],['الاجتماعيات',3],['التربية الفنية والنشيد',2],['التربية الرياضية',2]],
+ 'الأول المتوسط':[['التربية الإسلامية',2],['اللغة العربية',6],['اللغة الإنكليزية',5],['الرياضيات',5],['العلوم',5],['الاجتماعيات',4],['الحاسوب',3],[OPT,0]],
+ 'الثاني المتوسط':[['التربية الإسلامية',2],['اللغة العربية',6],['اللغة الإنكليزية',5],['الرياضيات',5],['العلوم',5],['الاجتماعيات',4],['الحاسوب',3],[OPT,0]],
+ 'الثالث المتوسط':[['التربية الإسلامية',2],['اللغة العربية',6],['اللغة الإنكليزية',5],['الرياضيات',5],['الكيمياء',3],['الفيزياء',3],['الأحياء',3],['الاجتماعيات',3],[OPT,0]],
+ 'الرابع العلمي':[['التربية الإسلامية',2],['اللغة العربية',5],['اللغة الإنكليزية',5],['الرياضيات',5],['الكيمياء',4],['الفيزياء',4],['الأحياء',3],['الحاسوب',2],[OPT,0]],
+ 'الرابع الأدبي':[['التربية الإسلامية',2],['اللغة العربية',7],['اللغة الإنكليزية',5],['الرياضيات',3],['الجغرافية',4],['التاريخ',4],['علم الاجتماع',3],['الحاسوب',2],[OPT,0]],
+ 'الخامس العلمي':[['التربية الإسلامية',2],['اللغة العربية',5],['اللغة الإنكليزية',5],['الرياضيات',5],['الكيمياء',4],['الفيزياء',4],['الأحياء',3],['علم الأرض',1],['الحاسوب',1],[OPT,0]],
+ 'الخامس الأدبي':[['التربية الإسلامية',2],['اللغة العربية',6],['اللغة الإنكليزية',5],['الرياضيات',3],['التاريخ',4],['الجغرافية',3],['الفلسفة والمنطق',3],['الاقتصاد',3],['الحاسوب',1],[OPT,0]],
+ 'السادس العلمي':[['التربية الإسلامية',2],['اللغة العربية',6],['اللغة الإنكليزية',5],['الرياضيات',6],['الكيمياء',4],['الفيزياء',4],['الأحياء',3]],
+ 'السادس الأدبي':[['التربية الإسلامية',2],['اللغة العربية',8],['اللغة الإنكليزية',5],['الرياضيات',4],['التاريخ',4],['الجغرافية',4],['الاقتصاد',3]]
+};
+/* الخطة المعتمدة لصف: تعديل المستخدم إن وُجد، وإلا المدمجة */
+function tplOf(grade){
+  const o=(DB.official||{})[grade];
+  if(o && o.length) return o.map(r=>[r[0],Number(r[1])||0]);
+  return TPL[grade]||null;
+}
+const isEdited=g=>!!((DB.official||{})[g]);
+
+/* يقارن خطة صف بالخطة الوزارية ويرجع قائمة الفروقات */
+function planDiff(c){
+  const off=tplOf(c.grade); if(!off) return null;          // لا توجد خطة رسمية لهذه المرحلة
+  const cur={}; planOf(c.id).forEach(r=>{ const k=String(r.subject||'').trim();
+    if(k) cur[k]=(cur[k]||0)+(Number(r.periods)||0); });
+  const want={}; off.forEach(([k,v])=>{ if(v) want[k]=v; });
+  const out=[];
+  Object.keys(want).forEach(k=>{ const g=cur[k]||0;
+    if(g!==want[k]) out.push({subject:k,want:want[k],got:g}); });
+  Object.keys(cur).forEach(k=>{ if(want[k]===undefined && cur[k])
+    out.push({subject:k,want:0,got:cur[k]}); });
+  return out;
+}
+const OFFICIAL_NOTE='نظام وزارة التربية رقم 22 لسنة 2011 — الخطة الدراسية للمرحلة الابتدائية 2026/2027';
+
+function tplFor(stage,grade){
+  const t=tplOf(grade); if(t) return t;
+  if(stage==='ابتدائية') return tplOf('الخامس الابتدائي');
+  if(stage==='إعدادية') return (grade&&grade.indexOf('أدبي')>-1)?tplOf('الخامس الأدبي'):tplOf('الخامس العلمي');
+  return tplOf('الثاني المتوسط');
+}
+const KEY='hesas_v1';
+/* مدرسة جاهزة مدمجة بالتطبيق */
+const SEED={"school":"مدرسة جواد الأئمة الابتدائية","stage":"ابتدائية","days":["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"],"periodsPerDay":6,"dayP":{"الأحد":7},"maxSameSubjectPerDay":2,"classes":[{"id":"8sa3nu8","name":"الأول الابتدائي","stage":"ابتدائية","grade":"الأول الابتدائي"},{"id":"9m353yi","name":"الثاني الابتدائي","stage":"ابتدائية","grade":"الثاني الابتدائي"},{"id":"ghgl38w","name":"الثالث الابتدائي","stage":"ابتدائية","grade":"الثالث الابتدائي"},{"id":"3tobh6k","name":"الرابع الابتدائي","stage":"ابتدائية","grade":"الرابع الابتدائي"},{"id":"ve69y2h","name":"الخامس الابتدائي / أ","stage":"ابتدائية","grade":"الخامس الابتدائي"},{"id":"ckxbz72","name":"الخامس الابتدائي / ب","stage":"ابتدائية","grade":"الخامس الابتدائي"},{"id":"a1u01wq","name":"السادس الابتدائي","stage":"ابتدائية","grade":"السادس الابتدائي"}],"plans":{"8sa3nu8":[{"subject":"التربية الإسلامية","periods":2},{"subject":"اللغة العربية","periods":9},{"subject":"اللغة الإنكليزية","periods":3},{"subject":"الرياضيات","periods":6},{"subject":"العلوم","periods":4},{"subject":"التربية الأخلاقية","periods":2},{"subject":"التربية الفنية والنشيد","periods":2},{"subject":"التربية الرياضية","periods":2}],"9m353yi":[{"subject":"التربية الإسلامية","periods":3},{"subject":"اللغة العربية","periods":8},{"subject":"اللغة الإنكليزية","periods":3},{"subject":"الرياضيات","periods":6},{"subject":"العلوم","periods":4},{"subject":"التربية الأخلاقية","periods":2},{"subject":"التربية الفنية والنشيد","periods":2},{"subject":"التربية الرياضية","periods":2}],"ghgl38w":[{"subject":"التربية الإسلامية","periods":3},{"subject":"اللغة العربية","periods":9},{"subject":"اللغة الإنكليزية","periods":3},{"subject":"الرياضيات","periods":6},{"subject":"العلوم","periods":4},{"subject":"التربية الفنية والنشيد","periods":2},{"subject":"التربية الرياضية","periods":3}],"3tobh6k":[{"subject":"التربية الإسلامية","periods":3},{"subject":"اللغة العربية","periods":8},{"subject":"اللغة الإنكليزية","periods":3},{"subject":"الرياضيات","periods":6},{"subject":"العلوم","periods":4},{"subject":"الاجتماعيات","periods":2},{"subject":"التربية الفنية والنشيد","periods":2},{"subject":"التربية الرياضية","periods":2}],"ve69y2h":[{"subject":"التربية الإسلامية","periods":3},{"subject":"اللغة العربية","periods":6},{"subject":"اللغة الإنكليزية","periods":4},{"subject":"الرياضيات","periods":6},{"subject":"العلوم","periods":4},{"subject":"الاجتماعيات","periods":3},{"subject":"التربية الفنية والنشيد","periods":2},{"subject":"التربية الرياضية","periods":2}],"ckxbz72":[{"subject":"التربية الإسلامية","periods":3},{"subject":"اللغة العربية","periods":6},{"subject":"اللغة الإنكليزية","periods":4},{"subject":"الرياضيات","periods":6},{"subject":"العلوم","periods":4},{"subject":"الاجتماعيات","periods":3},{"subject":"التربية الفنية والنشيد","periods":2},{"subject":"التربية الرياضية","periods":2}],"a1u01wq":[{"subject":"التربية الإسلامية","periods":3},{"subject":"اللغة العربية","periods":6},{"subject":"اللغة الإنكليزية","periods":5},{"subject":"الرياضيات","periods":6},{"subject":"العلوم","periods":4},{"subject":"الاجتماعيات","periods":3},{"subject":"التربية الفنية والنشيد","periods":2},{"subject":"التربية الرياضية","periods":2}]},"teachers":[{"id":"3f3py5g","name":"أنوار حيدر","subjects":["اللغة العربية","الرياضيات","التربية الأخلاقية"],"classes":["8sa3nu8"],"maxPerDay":7,"offDays":[]},{"id":"68yhx1o","name":"زهراء لفتة","subjects":["اللغة العربية","الرياضيات","التربية الأخلاقية"],"classes":["9m353yi"],"maxPerDay":7,"offDays":[1]},{"id":"iva0247","name":"هبة جبار","subjects":["الرياضيات","اللغة العربية","التربية الفنية والنشيد"],"classes":["8sa3nu8","ghgl38w"],"maxPerDay":7,"offDays":[]},{"id":"fanxvln","name":"رسل كريم","subjects":["الرياضيات","العلوم"],"classes":["3tobh6k","ve69y2h","ckxbz72"],"maxPerDay":7,"offDays":[0]},{"id":"86jhpao","name":"زينب لفتة","subjects":["اللغة العربية","التربية الإسلامية","التربية الفنية والنشيد"],"classes":["3tobh6k"],"maxPerDay":7,"offDays":[1]},{"id":"wwr5c3v","name":"نغم زغير","subjects":["اللغة العربية","التربية الإسلامية"],"classes":["ve69y2h","ckxbz72"],"maxPerDay":7,"offDays":[]},{"id":"1be81r1","name":"أسماء تركيا","subjects":["الرياضيات"],"classes":["ve69y2h","ckxbz72","a1u01wq"],"maxPerDay":7,"offDays":[2]},{"id":"u3zxcog","name":"وسن مچبل","subjects":["الاجتماعيات","التربية الإسلامية","التربية الرياضية"],"classes":["8sa3nu8","ghgl38w","3tobh6k","ve69y2h","ckxbz72","a1u01wq"],"maxPerDay":7,"offDays":[]},{"id":"bkqzony","name":"فرقان برهان","subjects":["العلوم","اللغة الإنكليزية","التربية الفنية والنشيد"],"classes":["9m353yi","ghgl38w","a1u01wq"],"maxPerDay":7,"offDays":[]},{"id":"r96whnb","name":"دنا حسين","subjects":["الاجتماعيات","العلوم","اللغة الإنكليزية"],"classes":["ghgl38w","ve69y2h","ckxbz72"],"maxPerDay":7,"offDays":[]},{"id":"0i5gug0","name":"خلود علي","subjects":["اللغة الإنكليزية"],"classes":["3tobh6k","ve69y2h","ckxbz72","a1u01wq"],"maxPerDay":7,"offDays":[4]},{"id":"lqu65za","name":"هديل جميل (مرشدة تربوية — بدون حصص)","subjects":[],"classes":[],"maxPerDay":7,"offDays":[]},{"id":"jpgkus6","name":"وئام عبد الرزاق","subjects":["اللغة العربية","التربية الإسلامية","التربية الرياضية","التربية الفنية والنشيد"],"classes":["8sa3nu8","9m353yi","ghgl38w","a1u01wq"],"maxPerDay":7,"offDays":[]},{"id":"kooy8rg","name":"حسام عبد الكريم","subjects":["اللغة الإنكليزية","العلوم","التربية الفنية والنشيد"],"classes":["8sa3nu8","3tobh6k","ve69y2h","ckxbz72"],"maxPerDay":7,"offDays":[]}],"assign":{"8sa3nu8|اللغة العربية":"3f3py5g","8sa3nu8|الرياضيات":"3f3py5g","8sa3nu8|التربية الأخلاقية":"3f3py5g","8sa3nu8|التربية الفنية والنشيد":"iva0247","8sa3nu8|اللغة الإنكليزية":"kooy8rg","8sa3nu8|العلوم":"kooy8rg","8sa3nu8|التربية الإسلامية":"jpgkus6","8sa3nu8|التربية الرياضية":"u3zxcog","9m353yi|اللغة العربية":"68yhx1o","9m353yi|الرياضيات":"68yhx1o","9m353yi|التربية الأخلاقية":"68yhx1o","9m353yi|العلوم":"bkqzony","9m353yi|اللغة الإنكليزية":"bkqzony","9m353yi|التربية الفنية والنشيد":"bkqzony","9m353yi|التربية الرياضية":"jpgkus6","9m353yi|التربية الإسلامية":"jpgkus6","ghgl38w|الرياضيات":"iva0247","ghgl38w|اللغة العربية":"iva0247","ghgl38w|التربية الفنية والنشيد":"bkqzony","ghgl38w|العلوم":"r96whnb","ghgl38w|اللغة الإنكليزية":"r96whnb","ghgl38w|التربية الرياضية":"u3zxcog","ghgl38w|التربية الإسلامية":"jpgkus6","3tobh6k|الرياضيات":"fanxvln","3tobh6k|اللغة العربية":"86jhpao","3tobh6k|التربية الإسلامية":"86jhpao","3tobh6k|التربية الفنية والنشيد":"86jhpao","3tobh6k|الاجتماعيات":"u3zxcog","3tobh6k|اللغة الإنكليزية":"0i5gug0","3tobh6k|العلوم":"kooy8rg","3tobh6k|التربية الرياضية":"u3zxcog","ve69y2h|العلوم":"fanxvln","ve69y2h|اللغة العربية":"wwr5c3v","ve69y2h|التربية الإسلامية":"wwr5c3v","ve69y2h|الرياضيات":"1be81r1","ve69y2h|الاجتماعيات":"r96whnb","ve69y2h|اللغة الإنكليزية":"0i5gug0","ve69y2h|التربية الفنية والنشيد":"kooy8rg","ve69y2h|التربية الرياضية":"u3zxcog","ckxbz72|العلوم":"fanxvln","ckxbz72|اللغة العربية":"wwr5c3v","ckxbz72|التربية الإسلامية":"wwr5c3v","ckxbz72|الرياضيات":"1be81r1","ckxbz72|الاجتماعيات":"r96whnb","ckxbz72|اللغة الإنكليزية":"0i5gug0","ckxbz72|التربية الفنية والنشيد":"kooy8rg","ckxbz72|التربية الرياضية":"u3zxcog","a1u01wq|الرياضيات":"1be81r1","a1u01wq|الاجتماعيات":"u3zxcog","a1u01wq|التربية الإسلامية":"u3zxcog","a1u01wq|العلوم":"bkqzony","a1u01wq|اللغة الإنكليزية":"0i5gug0","a1u01wq|اللغة العربية":"jpgkus6","a1u01wq|التربية الفنية والنشيد":"jpgkus6","a1u01wq|التربية الرياضية":"jpgkus6"}};
+const DEF=()=>({ school:'', stage:'متوسطة', days:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'],
+  periodsPerDay:6, dayP:{}, maxSameSubjectPerDay:2, classes:[], plans:{}, teachers:[], assign:{}, result:null });
+let S=DEF();
+let tab='school', view='class', viewIdx=0, secN=0, pStage='ابتدائية', pGrade='';
+
+/* مكتبة المدارس: كل مدرسة محفوظة لحالها ونقدر ننتقل بينها */
+const DBKEY='hesas_db_v1';
+let DB={active:'',schools:{}};
+function saveDB(){ try{ localStorage.setItem(DBKEY,JSON.stringify(DB)); }catch(e){} }
+function save(){ if(!DB.active) DB.active=uid(); DB.schools[DB.active]=S; saveDB(); }
+function load(){
+  try{
+    const raw=localStorage.getItem(DBKEY);
+    if(raw) DB=JSON.parse(raw)||DB;
+    else{
+      const old=localStorage.getItem(KEY);   // هجرة البيانات القديمة لمدرسة واحدة
+      if(old){ const id=uid(); DB={active:id,schools:{}}; DB.schools[id]=Object.assign(DEF(),JSON.parse(old));
+        saveDB(); try{ localStorage.removeItem(KEY); }catch(e){} }
+    }
+    DB.schools=DB.schools||{};
+    if(!DB.schools[DB.active]){ const ids=Object.keys(DB.schools); DB.active=ids[0]||''; }
+    if(DB.active) S=Object.assign(DEF(),DB.schools[DB.active]);
+    migrate();
+  }catch(e){}
+}
+/* تصحيحات أسماء سابقة تُطبَّق مرة واحدة على البيانات المحفوظة */
+const NAMEFIX={'ضمام عبد الكريم':'حسام عبد الكريم','أسماء تركي':'أسماء تركيا',
+  'وسن مجبل':'وسن مچبل','زهراء لفته':'زهراء لفتة','زينب لفته':'زينب لفتة'};
+function migrate(){
+  if(DB.v>=2) return;
+  let n=0;
+  Object.values(DB.schools||{}).forEach(sc=>{
+    (sc.teachers||[]).forEach(t=>{ const f=NAMEFIX[String(t.name||'').trim()]; if(f){ t.name=f; n++; } });
+  });
+  DB.v=2; saveDB();
+  if(n && DB.schools[DB.active]) S=Object.assign(DEF(),DB.schools[DB.active]);
+}
+const schoolList=()=>Object.keys(DB.schools||{}).map(id=>{
+  const v=DB.schools[id]||{};
+  return {id,name:v.school||'مدرسة بلا اسم',n:(v.classes||[]).length,t:(v.teachers||[]).length};
+});
+function gotoSchool(id){
+  if(!DB.schools[id]) return;
+  save(); DB.active=id; S=Object.assign(DEF(),DB.schools[id]);
+  secN=0; tab='school'; view='class'; viewIdx=0; render(); window.scrollTo(0,0);
+}
+function newSchool(data){
+  save(); const id=uid();
+  DB.active=id; S=Object.assign(DEF(),data||{}); DB.schools[id]=S; saveDB();
+  secN=0; tab='school'; view='class'; viewIdx=0; render(); window.scrollTo(0,0);
+}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* عدد حصص يوم معيّن (يرجع للافتراضي إذا ما محدّد) */
+const pOf=d=>{ const v=(S.dayP||{})[d]; return (v===undefined||v===null||v==='')?S.periodsPerDay:Math.max(0,+v); };
+const maxP=()=>Math.max(1,...S.days.map(pOf));
+const cap=()=>S.days.map(pOf).reduce((a,b)=>a+b,0);
+const dayList=()=>S.days.map(pOf);
+/* طول يوم كل صف: نقلّص أيام المدرسة حتى تساوي سعة الصف مجموع خطته،
+   فالصف الذي يكفيه 6 حصص يومياً لا تظهر له حصة سابعة أصلاً */
+function classDays(c){
+  const len=S.days.map(pOf);
+  const want=planOf(c.id).reduce((a,r)=>a+(Number(r.periods)||0),0);
+  let cap=len.reduce((a,b)=>a+b,0);
+  let guard=0;
+  while(cap>want && guard++<200){
+    let pick=-1;
+    for(let i=0;i<len.length;i++) if(len[i]>0 && (pick<0 || len[i]>=len[pick])) pick=i;
+    if(pick<0) break;
+    len[pick]--; cap--;
+  }
+  return len;
+}
+const classDayMap=()=>{ const m={}; S.classes.forEach(c=>m[c.id]=classDays(c)); return m; };
+const pOfC=(c,d)=>{ const i=S.days.indexOf(d); const l=classDays(c); return i<0?0:l[i]; };
+const planOf=id=>S.plans[id]||[];
+function allSubjects(){
+  const set=new Set();
+  S.classes.forEach(c=>planOf(c.id).forEach(r=>{ if(r.subject.trim()) set.add(r.subject.trim()); }));
+  return Array.from(set);
+}
+function eligible(classId,subject){
+  return S.teachers.filter(t=>(t.subjects||[]).indexOf(subject)>-1 && (t.classes||[]).indexOf(classId)>-1);
+}
+/* الإسناد: تلقائي لكل صف/مادة ما عليها اختيار يدوي */
+function buildLessons(){
+  const lessons=[], missing=[], load={};
+  S.classes.forEach(c=>{
+    planOf(c.id).forEach(r=>{
+      const subj=r.subject.trim(); if(!subj||!r.periods) return;
+      const k=c.id+'|'+subj;
+      const elig=eligible(c.id,subj);
+      let tid=S.assign[k];
+      if(!tid||!elig.some(t=>t.id===tid)){
+        if(!elig.length){ missing.push({cls:c.name,subject:subj}); return; }
+        elig.sort((a,b)=>(load[a.id]||0)-(load[b.id]||0));
+        tid=elig[0].id;
+      }
+      load[tid]=(load[tid]||0)+Number(r.periods);
+      lessons.push({classId:c.id,subject:subj,teacherId:tid,periods:Number(r.periods)});
+    });
+  });
+  return {lessons,missing,load};
+}
+/* ===================== العرض ===================== */
+/* نافذة تأكيد/تنبيه داخلية — نوافذ المتصفح الجاهزة محجوبة بداخل بعض التطبيقات */
+function modal(msg,isConfirm){
+  return new Promise(res=>{
+    const o=document.createElement('div'); o.className='ovl';
+    o.innerHTML='<div class="box"><p></p><div class="btns">'
+      +'<button class="btn" data-y>'+(isConfirm?'نعم، تأكيد':'حسناً')+'</button>'
+      +(isConfirm?'<button class="btn sec" data-n>إلغاء</button>':'')+'</div></div>';
+    o.querySelector('p').textContent=msg;
+    o.addEventListener('click',e=>{
+      if(e.target.closest('[data-y]')){ o.remove(); res(true); }
+      else if(e.target.closest('[data-n]')||e.target===o){ o.remove(); res(false); }
+    });
+    document.body.appendChild(o);
+  });
+}
+const say=m=>modal(m,false), ask=m=>modal(m,true);
+const app=document.getElementById('app');
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-t]'); if(!b) return;
+  tab=b.dataset.t; document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  render(); window.scrollTo(0,0);
+});
+function render(){
+  document.getElementById('hdrSub').textContent = S.school ? S.school : 'توزيع الحصص الأسبوعية على المدرسين بدون تضارب';
+  app.onclick=app.oninput=app.onchange=null;
+  if(tab==='school') viewSchool();
+  else if(tab==='official') viewOfficial();
+  else if(tab==='plans') viewPlans();
+  else if(tab==='teachers') viewTeachers();
+  else if(tab==='assign') viewAssign();
+  else viewResult();
+  save();
+}
+/* ---------- 1. المدرسة ---------- */
+function viewSchool(){
+  const schools=schoolList();
+  app.innerHTML=`
+  ${schools.length>0?`<div class="card">
+    <h2>مدارسي <span class="pill">${schools.length}</span></h2>
+    <p class="hint">اختر مدرسة محفوظة، أو أنشئ وحدة جديدة. كل مدرسة تحتفظ بصفوفها ومدرسيها وجدولها.</p>
+    <select id="iSchool" class="sel">
+      ${schools.map(x=>`<option value="${x.id}" ${x.id===DB.active?'selected':''}>${esc(x.name)} — ${x.n} صف، ${x.t} مدرس</option>`).join('')}
+    </select>
+    <div class="btns">
+      <button class="btn" id="bNewSchool">+ مدرسة جديدة</button>
+      <button class="btn sec" id="bCopySchool">نسخة من هذه المدرسة</button>
+      ${schools.some(x=>x.name===SEED.school)?'':'<button class="btn sec" id="bSeedSchool">استرجاع جواد الأئمة</button>'}
+      ${schools.length>1?'<button class="btn dang" id="bDelSchool">حذف هذه المدرسة</button>':''}
+    </div>
+  </div>`:''}
+  ${S.classes.length?'':`<div class="welcome">
+    <div class="em">✏️ 📐 📘</div>
+    <h3>أهلاً بك في موزّع الحصص</h3>
+    <p>اكتب اسم المدرسة، ثم أضف الصفوف من الأسفل.<br>بعدها: المواد ← المدرسون ← الجدول.</p>
+  </div>`}
+  <div class="card">
+    <h2>بيانات المدرسة</h2>
+    <p class="hint">ابدأ من هنا: اسم المدرسة، أيام الدوام، وعدد الحصص اليومية.</p>
+    <label>اسم المدرسة</label>
+    <input id="iName" value="${esc(S.school)}" placeholder="مثال: ثانوية السماوة للبنين">
+    <label>نوع المدرسة</label>
+    <select id="iStage">${Object.keys(GRADES).map(s=>`<option ${S.stage===s?'selected':''}>${s}</option>`).join('')}</select>
+    <label>أيام الدوام</label>
+    <div class="chips" id="dayChips">
+      ${DAYS_ALL.map(d=>`<button class="chip ${S.days.indexOf(d)>-1?'on':''}" data-d="${d}">${d}</button>`).join('')}
+    </div>
+    <div class="row" style="margin-top:4px">
+      <div><label>عدد الحصص باليوم (الافتراضي)</label><input id="iPer" type="number" min="1" max="10" value="${S.periodsPerDay}"></div>
+      <div><label>أقصى تكرار للمادة باليوم</label><input id="iMax" type="number" min="1" max="4" value="${S.maxSameSubjectPerDay}"></div>
+    </div>
+    <label>حصص كل يوم <span class="pill">تقدر تخلي يوم 7 ويوم 5</span></label>
+    <div class="dayp">
+      ${S.days.map(d=>`<div><span>${d}</span><input type="number" min="0" max="10" value="${pOf(d)}" data-dp="${d}"></div>`).join('')}
+    </div>
+    <div class="chips" style="margin-top:10px">
+      <button class="chip ${S.noBackToBack!==false?'on':''}" id="cNoBack">
+        ${S.noBackToBack!==false?'✓ ':''}منع حصتين متتاليتين بنفس المادة</button>
+    </div>
+    <div class="good" style="margin-top:12px">أقصى سعة: <b>${cap()}</b> حصة أسبوعياً (${S.days.map(d=>pOf(d)).join(' + ')}).
+      وكل صف يأخذ من الأيام بقدر خطته فقط — الصف الذي يكفيه ${S.periodsPerDay} حصص يومياً لا تُعرض له حصة إضافية.</div>
+  </div>
+
+  <div class="card">
+    <h2>صفوف المدرسة <span class="pill">${S.classes.length}</span></h2>
+    <p class="hint">أضف الصفوف والشُعب. كل صف يأخذ جدوله الخاص.</p>
+    <div class="row">
+      <select id="iGrade" class="sel">${GRADES[S.stage].map(g=>`<option>${g}</option>`).join('')}</select>
+      <select id="iSec" class="sel">
+        ${[[0,'بدون شُعب'],[1,'شعبة واحدة (أ)'],[2,'شعبتان (أ، ب)'],[3,'ثلاث شُعب (أ-ج)'],[4,'أربع شُعب (أ-د)'],[5,'خمس شُعب (أ-هـ)']]
+          .map(([v,l])=>`<option value="${v}" ${secN===v?'selected':''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="btns">
+      <button class="btn" id="bAdd">+ إضافة صف</button>
+      <button class="btn sec" id="bAddAll">إضافة كل صفوف المرحلة</button>
+    </div>
+    <div style="margin-top:12px">
+      ${S.classes.length?S.classes.map(c=>`
+        <div class="item"><div class="top">
+          <div style="flex:1 1 auto;min-width:0">
+          <input type="text" value="${esc(c.name)}" data-cn="${c.id}" style="font-weight:700;background:var(--card)">
+          <div class="meta">${planOf(c.id).reduce((a,b)=>a+Number(b.periods||0),0)} / ${cap()} حصة · ${planOf(c.id).length} مادة</div></div>
+          <button class="x" data-del="${c.id}">✕</button>
+        </div></div>`).join(''):'<p class="hint">لا توجد صفوف بعد.</p>'}
+    </div>
+  </div>
+
+  <div class="card noprint">
+    <h2>النسخ الاحتياطي</h2>
+    <p class="hint">نسخة كاملة من المدرسة (الصفوف والمواد والمدرسون) لحفظها أو نقلها لجهاز ثاني. لتصدير الجدول نفسه كملف Excel، روح لتبويب «الجدول».</p>
+    <div class="btns">
+      <button class="btn sec" id="bExport">⬇︎ تصدير نسخة احتياطية</button>
+      <button class="btn sec" id="bImport">⬆︎ استيراد ملف</button>
+      <button class="btn dang" id="bReset">مسح كل المدارس</button>
+    </div>
+    <input type="file" id="fImport" accept="application/json" style="display:none">
+  </div>`;
+
+  const bind=(id,ev,fn)=>document.getElementById(id).addEventListener(ev,fn);
+  bind('iName','input',e=>{S.school=e.target.value; save();});
+  bind('iStage','change',e=>{S.stage=e.target.value; render();});
+  bind('iPer','change',e=>{S.periodsPerDay=Math.max(1,Math.min(10,+e.target.value||6)); S.dayP={}; S.result=null; render();});
+  app.oninput=(e=>{
+    const t=e.target;
+    if(t.dataset.dp!==undefined){
+      S.dayP=S.dayP||{}; S.dayP[t.dataset.dp]=Math.max(0,Math.min(10,+t.value||0));
+      S.result=null; save(); return;
+    }
+    if(t.dataset.cn!==undefined){            // تغيير اسم الصف
+      const c=S.classes.find(x=>x.id===t.dataset.cn);
+      if(c){ c.name=t.value; S.result=null; save(); }
+    }
+  });
+  bind('iMax','change',e=>{S.maxSameSubjectPerDay=Math.max(1,Math.min(4,+e.target.value||2)); S.result=null; save();});
+  document.getElementById('dayChips').addEventListener('click',e=>{
+    const b=e.target.closest('.chip'); if(!b) return;
+    const d=b.dataset.d, i=S.days.indexOf(d);
+    if(i>-1){ if(S.days.length<2) return say('لازم يوم واحد على الأقل'); S.days.splice(i,1); }
+    else S.days.push(d);
+    S.days.sort((a,b)=>DAYS_ALL.indexOf(a)-DAYS_ALL.indexOf(b));
+    S.result=null; render();
+  });
+  bind('cNoBack','click',()=>{ S.noBackToBack=(S.noBackToBack===false); S.result=null; render(); });
+  bind('iSec','change',e=>{ secN=+e.target.value; });
+  bind('bAdd','click',()=>{
+    const n=addGrade(document.getElementById('iGrade').value);
+    if(!n) say('هذا الصف وشُعبه مضافة من قبل'); else render();
+  });
+  bind('bAddAll','click',()=>{
+    let n=0; GRADES[S.stage].forEach(g=>n+=addGrade(g));
+    if(!n) say('كل صفوف المرحلة مضافة من قبل'); else render();
+  });
+  app.onclick=(async e=>{
+    const d=e.target.closest('[data-del]'); if(!d) return;
+    const id=d.dataset.del;
+    if(!await ask('حذف هذا الصف وكل مواده؟')) return;
+    S.classes=S.classes.filter(c=>c.id!==id); delete S.plans[id];
+    S.teachers.forEach(t=>t.classes=(t.classes||[]).filter(x=>x!==id));
+    S.result=null; render();
+  });
+  const sSel=document.getElementById('iSchool');
+  if(sSel) sSel.addEventListener('change',e=>gotoSchool(e.target.value));
+  const bNew=document.getElementById('bNewSchool');
+  if(bNew) bNew.addEventListener('click',()=>newSchool());
+  const bCopy=document.getElementById('bCopySchool');
+  if(bCopy) bCopy.addEventListener('click',()=>{
+    const cp=JSON.parse(JSON.stringify(S)); cp.school=(cp.school||'مدرسة')+' — نسخة'; cp.result=null;
+    newSchool(cp); say('تم إنشاء نسخة. عدّل عليها بحرية والأصل محفوظ.');
+  });
+  const bSeed=document.getElementById('bSeedSchool');
+  if(bSeed) bSeed.addEventListener('click',()=>{
+    newSchool(JSON.parse(JSON.stringify(SEED))); say('تم استرجاع مدرسة جواد الأئمة ✓');
+  });
+  const bDel=document.getElementById('bDelSchool');
+  if(bDel) bDel.addEventListener('click',async()=>{
+    if(!await ask('حذف مدرسة "'+(S.school||'بلا اسم')+'" وكل بياناتها؟')) return;
+    delete DB.schools[DB.active];
+    const ids=Object.keys(DB.schools); DB.active=ids[0]||'';
+    S=DB.active?Object.assign(DEF(),DB.schools[DB.active]):DEF();
+    saveDB(); secN=0; tab='school'; render(); window.scrollTo(0,0);
+  });
+  bind('bExport','click',exportFile);
+  bind('bImport','click',()=>document.getElementById('fImport').click());
+  bind('fImport','change',importFile);
+  bind('bReset','click',async()=>{
+    if(!await ask('راح تنمسح كل المدارس المحفوظة ببياناتها كلها. متأكد؟')) return;
+    try{ localStorage.removeItem(KEY); localStorage.removeItem(DBKEY); }catch(e){}
+    DB={active:'',schools:{}}; S=DEF(); secN=0; tab='school'; view='class'; viewIdx=0;
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.t==='school'));
+    render(); window.scrollTo(0,0);
+  });
+}
+const SECS=['أ','ب','ج','د','هـ'];
+/* يضيف صفاً بكل شُعبه حسب العدد المختار، ويرجع كم صف فعلاً انضاف */
+function addGrade(grade){
+  let n=0;
+  if(secN<=0){ if(addClass(grade,true)) n++; }
+  else for(let i=0;i<secN;i++){ if(addClass(grade+' / '+SECS[i],true)) n++; }
+  return n;
+}
+function addClass(name,silent){
+  if(S.classes.some(c=>c.name===name)){ if(!silent) say('الصف موجود مسبقاً'); return false; }
+  const id=uid(), grade=name.split(' / ')[0];
+  S.classes.push({id,name,stage:S.stage,grade});
+  S.plans[id]=tplFor(S.stage,grade).map(([subject,periods])=>({subject,periods}));
+  S.result=null; if(!silent) render();
+  return true;
+}
+/* ---------- 2. المواد ---------- */
+function viewPlans(){
+  if(!S.classes.length){ app.innerHTML=`<div class="card"><h2>المواد</h2><div class="warn">أضف الصفوف أولاً من تبويب «المدرسة».</div></div>`; return; }
+  app.innerHTML=`
+  <div class="card">
+    <h2>خطة المواد لكل صف</h2>
+    <p class="hint">خطة <b>الابتدائية</b> معتمدة حرفياً من ${OFFICIAL_NOTE}. أرقام <b>المتوسطة والإعدادية</b> مقترحة مؤقتاً.
+      لتغيير الخطة المرجعية نفسها، روح لتبويب <b>«الخطة»</b>.</p>
+    ${(()=>{ const ch=S.classes.map(c=>({c,d:planDiff(c)})).filter(x=>x.d!==null);
+      if(!ch.length) return '';
+      const bad=ch.filter(x=>x.d.length);
+      return bad.length
+        ? `<div class="err">${bad.length} صف يخالف الخطة الوزارية: ${bad.map(x=>esc(x.c.name)).join('، ')}</div>`
+        : `<div class="good">كل الصفوف (${ch.length}) مطابقة للخطة الوزارية حرفياً ✓</div>`; })()}
+    <div class="btns" style="margin:0 0 12px"><button class="btn sec" id="bTplAll">↻ إرجاع القوالب الرسمية لكل الصفوف</button></div>
+    ${(()=>{ const ov=S.classes.filter(c=>planOf(c.id).reduce((a,b)=>a+Number(b.periods||0),0)>cap());
+      return ov.length?`<div class="warn">هذه الصفوف حصصها أكثر من سعة الأسبوع (${cap()}):<br>
+        ${ov.map(c=>`• ${esc(c.name)} — ${planOf(c.id).reduce((a,b)=>a+Number(b.periods||0),0)} حصة`).join('<br>')}<br><br>
+        الحل: زد حصة على أحد الأيام من «حصص كل يوم» بتبويب المدرسة (مثل السادس الابتدائي مجموعه الرسمي 31 حصة)، أو قلّل حصة من إحدى المواد.</div>`:''; })()}
+    ${S.classes.map(c=>{
+      const pl=planOf(c.id), tot=pl.reduce((a,b)=>a+Number(b.periods||0),0);
+      const df=planDiff(c);
+      const col = tot>cap() ? 'var(--danger)' : (df&&df.length ? 'var(--accent)' : 'var(--ok)');
+      const badge = df===null ? ''
+        : df.length===0 ? '<span class="pill" style="background:#dcfce7;color:#166534">✓ مطابق للخطة الوزارية</span>'
+        : '<span class="pill" style="background:#fee2e2;color:#991b1b">✗ يخالف الخطة</span>';
+      return `<details data-c="${c.id}">
+        <summary><span>${esc(c.name)} ${badge}</span><span class="pill" style="background:transparent;color:${col};border:1px solid currentColor">${tot}/${cap()}</span></summary>
+        <div class="dbody">
+          ${df&&df.length?`<div class="err">فروقات عن الخطة الوزارية:<br>
+            ${df.map(x=>`• ${esc(x.subject)}: المقرّر <b>${x.want}</b> وعندك <b>${x.got}</b>`).join('<br>')}
+            <br><br>اضغط «قالب جاهز» لإرجاع هذا الصف للخطة الرسمية.</div>`:''}
+          ${pl.map((r,i)=>`<div class="plan-row">
+            <input type="text" value="${esc(r.subject)}" data-f="s" data-c="${c.id}" data-i="${i}" placeholder="اسم المادة">
+            <input type="number" min="0" max="${cap()}" value="${r.periods}" data-f="p" data-c="${c.id}" data-i="${i}">
+            <button class="x" data-rm="${c.id}" data-i="${i}">✕</button>
+          </div>`).join('')}
+          <div class="btns">
+            <button class="btn sec" data-addrow="${c.id}">+ مادة</button>
+            <button class="btn sec" data-tpl="${c.id}">قالب جاهز</button>
+            <button class="btn sec" data-copy="${c.id}">نسخ لباقي الصفوف</button>
+          </div>
+        </div></details>`;
+    }).join('')}
+  </div>`;
+  document.getElementById('bTplAll').addEventListener('click',async()=>{
+    if(!await ask('راح ترجع مواد كل الصفوف للقوالب الرسمية وتروح أي تعديلات سويتها. متأكد؟')) return;
+    S.classes.forEach(c=>{ S.plans[c.id]=tplFor(c.stage,c.grade).map(([subject,periods])=>({subject,periods})); });
+    S.result=null; render();
+  });
+  app.oninput=(e=>{
+    const t=e.target; if(!t.dataset.f) return;
+    const pl=S.plans[t.dataset.c], i=+t.dataset.i;
+    if(t.dataset.f==='s') pl[i].subject=t.value; else pl[i].periods=Math.max(0,+t.value||0);
+    S.result=null; save();
+    if(t.dataset.f==='p'){
+      const d=t.closest('details'), tot=pl.reduce((a,b)=>a+Number(b.periods||0),0);
+      const pill=d.querySelector('.pill');
+      pill.textContent=tot+'/'+cap();
+      pill.style.color = tot===cap()?'var(--ok)':(tot>cap()?'var(--danger)':'var(--accent)');
+    }
+  });
+  app.onclick=(async e=>{
+    const t=e.target;
+    const open=id=>{ render(); const d=app.querySelector(`details[data-c="${id}"]`); if(d) d.open=true; };
+    if(t.dataset.addrow){ S.plans[t.dataset.addrow].push({subject:'',periods:1}); S.result=null; open(t.dataset.addrow); }
+    else if(t.dataset.rm){ S.plans[t.dataset.rm].splice(+t.dataset.i,1); S.result=null; open(t.dataset.rm); }
+    else if(t.dataset.tpl){ const c=S.classes.find(x=>x.id===t.dataset.tpl);
+      S.plans[c.id]=tplFor(c.stage,c.grade).map(([subject,periods])=>({subject,periods})); S.result=null; open(c.id); }
+    else if(t.dataset.copy){ const src=S.plans[t.dataset.copy];
+      if(!await ask('نسخ هذه الخطة لكل الصفوف الباقية؟')) return;
+      S.classes.forEach(c=>{ if(c.id!==t.dataset.copy) S.plans[c.id]=src.map(r=>({...r})); });
+      S.result=null; open(t.dataset.copy); }
+  });
+}
+/* ---------- الخطة الوزارية (قابلة للتعديل) ---------- */
+function viewOfficial(){
+  const grades=GRADES[pStage]||[];
+  if(!pGrade || grades.indexOf(pGrade)<0) pGrade=grades[0]||'';
+  const rows=tplOf(pGrade)||[];
+  const tot=rows.reduce((a,r)=>a+(Number(r[1])||0),0);
+  const edited=isEdited(pGrade);
+  const nEdited=Object.keys(DB.official||{}).length;
+
+  app.innerHTML=`
+  <div class="card">
+    <h2>الخطة الوزارية</h2>
+    <p class="hint">هذه هي الخطة المرجعية التي يقارن بها البرنامج ويبني عليها الصفوف الجديدة.
+      إذا صدرت خطة جديدة من الوزارة، عدّلها هنا مرة واحدة وتنطبق على <b>كل المدارس</b> بالتطبيق.</p>
+    ${nEdited?`<div class="warn">عدّلت ${nEdited} صف عن الخطة المدمجة.</div>`
+              :`<div class="good">الخطة الحالية هي المدمجة: ${OFFICIAL_NOTE}</div>`}
+    <div class="row">
+      <select id="pSt" class="sel">${Object.keys(GRADES).map(x=>`<option ${pStage===x?'selected':''}>${x}</option>`).join('')}</select>
+      <select id="pGr" class="sel">${grades.map(g=>`<option ${pGrade===g?'selected':''}>${esc(g)}${isEdited(g)?' ✎':''}</option>`).join('')}</select>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>${esc(pGrade)} <span class="pill" style="background:transparent;border:1px solid currentColor;color:${tot?'var(--brand)':'var(--muted)'}">${tot} حصة</span>
+      ${edited?'<span class="pill" style="background:#fef3c7;color:#92400e">معدّلة</span>':''}</h2>
+    <p class="hint">اكتب اسم المادة وعدد حصصها الأسبوعية. اتركه صفراً للمواد غير المقرّرة في هذا الصف.</p>
+    ${rows.map((r,i)=>`<div class="plan-row">
+      <input type="text" value="${esc(r[0])}" data-of="s" data-i="${i}" placeholder="اسم المادة">
+      <input type="number" min="0" max="40" value="${Number(r[1])||0}" data-of="p" data-i="${i}">
+      <button class="x" data-ofrm="${i}">✕</button>
+    </div>`).join('')||'<p class="hint">لا توجد مواد.</p>'}
+    <div class="btns">
+      <button class="btn sec" id="ofAdd">+ مادة</button>
+      ${edited?'<button class="btn dang" id="ofReset">استرجاع الأصلية لهذا الصف</button>':''}
+    </div>
+  </div>
+
+  <div class="card noprint">
+    <h2>إدارة الخطة</h2>
+    <p class="hint">بعد تعديل الخطة، اذهب لتبويب «المواد» واضغط «إرجاع القوالب الرسمية» لتطبيقها على صفوف مدرستك الحالية.</p>
+    <div class="btns">
+      <button class="btn sec" id="ofExport">⬇︎ تصدير الخطة</button>
+      <button class="btn sec" id="ofImport">⬆︎ استيراد خطة</button>
+      ${nEdited?'<button class="btn dang" id="ofResetAll">استرجاع الخطة المدمجة كاملة</button>':''}
+    </div>
+    <input type="file" id="ofFile" accept="application/json" style="display:none">
+  </div>`;
+
+  const put=()=>{ DB.official=DB.official||{}; };
+  const cur=()=>{ put(); if(!DB.official[pGrade]) DB.official[pGrade]=(TPL[pGrade]||[]).map(r=>[r[0],r[1]]);
+                  return DB.official[pGrade]; };
+
+  document.getElementById('pSt').addEventListener('change',e=>{ pStage=e.target.value; pGrade=''; render(); });
+  document.getElementById('pGr').addEventListener('change',e=>{ pGrade=e.target.value.replace(' ✎',''); render(); });
+
+  app.oninput=(e=>{
+    const t=e.target; if(!t.dataset.of) return;
+    const a=cur(), i=+t.dataset.i;
+    if(t.dataset.of==='s') a[i][0]=t.value; else a[i][1]=Math.max(0,+t.value||0);
+    saveDB();
+    if(t.dataset.of==='p'){
+      const n=a.reduce((x,r)=>x+(Number(r[1])||0),0);
+      const pill=app.querySelector('.card:nth-of-type(2) .pill');
+      if(pill) pill.textContent=n+' حصة';
+    }
+  });
+
+  app.onclick=(async e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    if(b.id==='ofAdd'){ cur().push(['',0]); saveDB(); return render(); }
+    if(b.dataset.ofrm!==undefined){ cur().splice(+b.dataset.ofrm,1); saveDB(); return render(); }
+    if(b.id==='ofReset'){
+      if(!await ask('إرجاع خطة "'+pGrade+'" للأصلية المدمجة؟')) return;
+      delete DB.official[pGrade]; saveDB(); return render();
+    }
+    if(b.id==='ofResetAll'){
+      if(!await ask('إرجاع كل الخطة للنسخة المدمجة وإلغاء تعديلاتك؟')) return;
+      DB.official={}; saveDB(); return render();
+    }
+    if(b.id==='ofExport'){
+      const all={}; Object.keys(GRADES).forEach(st=>GRADES[st].forEach(g=>{ const t=tplOf(g); if(t) all[g]=t; }));
+      return saveFile('الخطة-الوزارية.json','official-plan-'+today()+'.json',
+        JSON.stringify({type:'hesas-official-plan',plan:all},null,2),'application/json');
+    }
+    if(b.id==='ofImport') return document.getElementById('ofFile').click();
+  });
+
+  document.getElementById('ofFile').addEventListener('change',ev=>{
+    const f=ev.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=()=>{ try{
+        const o=JSON.parse(rd.result);
+        const pl=o.plan||o;
+        let n=0; DB.official=DB.official||{};
+        Object.keys(pl).forEach(g=>{
+          if(!Array.isArray(pl[g])) return;
+          DB.official[g]=pl[g].map(r=>[String(r[0]),Number(r[1])||0]); n++;
+        });
+        saveDB(); render(); say('تم استيراد خطة '+n+' صف ✓');
+      }catch(err){ say('الملف غير صالح'); } };
+    rd.readAsText(f);
+  });
+}
+
+/* ---------- 3. المدرسون ---------- */
+function viewTeachers(){
+  const subs=allSubjects();
+  const tload=buildLessons().load;
+  app.innerHTML=`
+  <div class="card">
+    <h2>المدرسون <span class="pill">${S.teachers.length}</span></h2>
+    <p class="hint">حدّد لكل مدرس المواد التي يدرّسها والصفوف التي يدخلها. إذا انتقل مدرس وجاء بديله، بدّل الاسم فقط وتبقى مواده وصفوفه مثل ما هي.</p>
+    <div class="btns"><button class="btn" id="bNewT">+ إضافة مدرس</button></div>
+  </div>
+  ${!subs.length?'<div class="card"><div class="warn">أضف المواد أولاً من تبويب «المواد» حتى تقدر تختارها للمدرسين.</div></div>':''}
+  ${S.teachers.map((t,ti)=>{
+    const load=(tload[t.id]||0);
+    return `<div class="card">
+      <div class="item" style="border:0;padding:0;background:transparent">
+        <div class="top">
+          <input type="text" value="${esc(t.name)}" data-tn="${ti}" placeholder="اسم المدرس" style="font-weight:700">
+          <button class="x" data-tdel="${ti}">✕</button>
+        </div>
+      </div>
+      <label>المواد</label>
+      <div class="chips">${subs.map(s=>`<button class="chip ${(t.subjects||[]).indexOf(s)>-1?'on':''}" data-ts="${ti}" data-v="${esc(s)}">${esc(s)}</button>`).join('')||'<span class="hint">لا توجد مواد</span>'}</div>
+      <label>الصفوف التي يدخلها</label>
+      <div class="chips">${S.classes.map(c=>`<button class="chip ${(t.classes||[]).indexOf(c.id)>-1?'on':''}" data-tc="${ti}" data-v="${c.id}">${esc(c.name)}</button>`).join('')||'<span class="hint">لا توجد صفوف</span>'}</div>
+      <div class="row" style="margin-top:6px">
+        <div><label>أقصى حصص باليوم</label><input type="number" min="1" max="${maxP()}" value="${t.maxPerDay||maxP()}" data-tm="${ti}"></div>
+      </div>
+      <label>أيام عطلته (اختياري)</label>
+      <div class="chips">${S.days.map((d,di)=>`<button class="chip ${(t.offDays||[]).indexOf(di)>-1?'on':''}" data-to="${ti}" data-v="${di}">${d}</button>`).join('')}</div>
+      <div class="total"><span>مجموع حصصه الأسبوعية</span><span style="color:var(--brand)">${load} حصة</span></div>
+    </div>`;
+  }).join('')}`;
+
+  document.getElementById('bNewT').addEventListener('click',()=>{
+    S.teachers.push({id:uid(),name:'مدرس '+(S.teachers.length+1),subjects:[],classes:[],maxPerDay:maxP(),offDays:[]});
+    S.result=null; render();
+  });
+  app.oninput=(e=>{
+    const t=e.target;
+    if(t.dataset.tn!==undefined){ S.teachers[+t.dataset.tn].name=t.value; S.result=null; save(); }
+    if(t.dataset.tm!==undefined){ S.teachers[+t.dataset.tm].maxPerDay=Math.max(1,+t.value||maxP()); S.result=null; save(); }
+  });
+  app.onclick=(async e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const tog=(arr,v)=>{ const i=arr.indexOf(v); i>-1?arr.splice(i,1):arr.push(v); };
+    if(b.dataset.tdel!==undefined){
+      const tt=S.teachers[+b.dataset.tdel];
+      if(!await ask('حذف "'+(tt?tt.name:'المدرس')+'"؟ المواد المسندة له راح ترجع للتوزيع التلقائي.')) return;
+      if(tt) Object.keys(S.assign).forEach(k=>{ if(S.assign[k]===tt.id) delete S.assign[k]; });
+      S.teachers.splice(+b.dataset.tdel,1); S.result=null; return render();
+    }
+    if(b.dataset.ts!==undefined){ const t=S.teachers[+b.dataset.ts]; t.subjects=t.subjects||[]; tog(t.subjects,b.dataset.v); S.result=null; return render(); }
+    if(b.dataset.tc!==undefined){ const t=S.teachers[+b.dataset.tc]; t.classes=t.classes||[]; tog(t.classes,b.dataset.v); S.result=null; return render(); }
+    if(b.dataset.to!==undefined){ const t=S.teachers[+b.dataset.to]; t.offDays=t.offDays||[]; tog(t.offDays,+b.dataset.v); S.result=null; return render(); }
+  });
+}
+/* ---------- 4. الإسناد ---------- */
+function viewAssign(){
+  const {missing,load}=buildLessons();
+  app.innerHTML=`
+  <div class="card">
+    <h2>إسناد المواد للمدرسين</h2>
+    <p class="hint">يختار البرنامج تلقائياً المدرس صاحب الحصص الأقل. تقدر تغيّر أي مادة يدوياً — مثلاً مدرس رياضيات للثالث والرابع وآخر للخامس والسادس.</p>
+    ${missing.length?`<div class="err">مواد بدون مدرس مؤهل:<br>${missing.map(m=>`• ${esc(m.cls)} — ${esc(m.subject)}`).join('<br>')}<br><br>أضف للمدرس المادة <b>و</b> الصف من تبويب «المدرسون».</div>`:'<div class="good">كل المواد مُسندة ✓</div>'}
+  </div>
+  ${S.classes.map(c=>`
+    <div class="card">
+      <h2>${esc(c.name)}</h2>
+      ${planOf(c.id).filter(r=>r.subject.trim()).map(r=>{
+        const subj=r.subject.trim(), k=c.id+'|'+subj, elig=eligible(c.id,subj);
+        return `<div class="plan-row">
+          <span style="flex:1 1 110px;font-size:13.5px;font-weight:600">${esc(subj)} <span class="pill">${r.periods}</span></span>
+          <select class="sel" data-k="${esc(k)}" style="flex:1 1 150px">
+            <option value="">— تلقائي —</option>
+            ${elig.map(t=>`<option value="${t.id}" ${S.assign[k]===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}
+          </select>
+        </div>`;
+      }).join('')||'<p class="hint">لا توجد مواد.</p>'}
+    </div>`).join('')}
+  <div class="card">
+    <h2>الحصص الأسبوعية للمدرسين</h2>
+    ${S.teachers.length?S.teachers.map(t=>`<div class="total" style="border-top:1px dashed var(--line);margin:0;padding:7px 0">
+      <span>${esc(t.name)}</span><span style="color:var(--brand)">${load[t.id]||0} حصة</span></div>`).join(''):'<p class="hint">لا يوجد مدرسون.</p>'}
+  </div>`;
+  app.onchange=(e=>{
+    const s=e.target.closest('select[data-k]'); if(!s) return;
+    if(s.value) S.assign[s.dataset.k]=s.value; else delete S.assign[s.dataset.k];
+    S.result=null; render();
+  });
+}
+/* ---------- 5. الجدول ---------- */
+function viewResult(){
+  const r=S.result;
+  let head=`<div class="card noprint">
+    <h2>توليد الجدول الأسبوعي</h2>
+    <p class="hint">يوزّع كل الحصص بدون تضارب: لا مدرس في صفّين بنفس الوقت، ولا صف بمدرسّين.</p>
+    <div class="btns"><button class="btn" id="bGen">⚙︎ ${r?'إعادة التوليد':'توليد الجدول'}</button>
+    ${r?`<button class="btn" id="bPdf">📤 مشاركة PDF</button>`:''}</div>
+    ${r?`<p class="hint" style="margin:10px 0 0">يبني ملف PDF ويفتح ورقة المشاركة — أرسله واتساب أو احفظه بالملفات.</p>
+    <div class="btns">
+      <button class="btn sec" id="bPdfClass">📄 جداول الصفوف فقط</button>
+      <button class="btn sec" id="bPdfTeacher">📄 جداول المدرسين فقط</button>
+    </div>
+    <div class="btns">
+      <button class="btn sec" id="bPrint">🖨 طباعة</button>
+      <button class="btn sec" id="bXls">⬇︎ Excel</button>
+    </div>`:''}
+  </div>`;
+  if(!r){ app.innerHTML=head; bindGen(); return; }
+
+  const tName=id=>{ const t=S.teachers.find(x=>x.id===id); return t?t.name:'—'; };
+  const cName=id=>{ const c=S.classes.find(x=>x.id===id); return c?c.name:'—'; };
+  const L=r.lessons;
+
+  let body='';
+  if(!r.ok){
+    const stuck=r.lessons.map((l,i)=>({l,n:r.remaining[i]})).filter(x=>x.n>0)
+      .sort((a,b)=>b.n-a.n).slice(0,6)
+      .map(x=>`• ${cName(x.l.classId)} — ${esc(x.l.subject)} (${esc(tName(x.l.teacherId))}): باقي ${x.n}`).join('<br>');
+    body+=`<div class="err noprint"><b>تعذّر توزيع ${r.leftover} حصة:</b><br>${stuck}<br><br>
+      غالباً السبب أن هؤلاء المدرسين مشغولون بصفوف ثانية بنفس الأوقات. الحل: وزّع صفوفهم على مدرس إضافي،
+      أو ارفع «أقصى تكرار للمادة باليوم» من تبويب المدرسة، أو أعد التوليد.</div>`;
+  }
+  else {
+    // نتحقق أن الجدول الناتج ينفّذ خطة كل صف بالعدد تماماً
+    let mism=0;
+    S.classes.forEach(c=>{
+      const got={};
+      const cl=classDays(c);
+      for(let d=0;d<S.days.length;d++) for(let p=0;p<cl[d];p++){
+        const li=r.grid[c.id][d][p]; if(li>-1) got[L[li].subject]=(got[L[li].subject]||0)+1; }
+      planOf(c.id).forEach(x=>{ if((Number(x.periods)||0)!==(got[x.subject]||0)) mism++; });
+    });
+    const offOk=S.classes.map(planDiff).filter(d=>d!==null);
+    const allOff=offOk.length && offOk.every(d=>d.length===0);
+    body+=`<div class="good noprint">تم التوزيع بنجاح بدون أي تضارب ✓<br>
+      كل مادة أخذت عدد حصصها كاملاً${mism?' — عدا '+mism+' حالة':''} ✓
+      ${allOff?'<br>والحصص مطابقة للخطة الوزارية حرفياً ✓':''}</div>`;
+
+  }
+
+  body+=`<div class="card noprint"><div class="seg">
+    <button data-v="class" class="${view==='class'?'on':''}">حسب الصف</button>
+    <button data-v="teacher" class="${view==='teacher'?'on':''}">حسب المدرس</button>
+    <button data-v="load" class="${view==='load'?'on':''}">الحصص</button>
+  </div>`;
+  if(view==='class') body+=`<select class="sel" id="pick">${S.classes.map((c,i)=>`<option value="${i}" ${viewIdx===i?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`;
+  if(view==='teacher') body+=`<select class="sel" id="pick">${S.teachers.map((t,i)=>`<option value="${i}" ${viewIdx===i?'selected':''}>${esc(t.name)}</option>`).join('')}</select>`;
+  body+=`</div>`;
+
+  const grid=(title,cells,lens)=>`<div class="card printblock"><h2>${esc(title)}</h2>
+    <div style="font-size:12px;color:var(--muted)">${esc(S.school||'')}</div>
+    <div class="tablewrap"><table><thead><tr><th>اليوم</th>
+    ${Array.from({length:maxP()},(_,p)=>`<th>الحصة ${p+1}</th>`).join('')}</tr></thead><tbody>
+    ${S.days.map((d,di)=>`<tr><td class="daycol">${d}</td>${
+      Array.from({length:maxP()},(_,p)=>p>=((lens||dayList())[di])?'<td class="off"></td>':cells(di,p)).join('')}</tr>`).join('')}
+    </tbody></table></div></div>`;
+
+  const classTable=c=>grid('جدول '+c.name,(d,p)=>{
+    const li=r.grid[c.id][d][p];
+    if(li<0) return '<td class="free">فراغ</td>';
+    return `<td><span class="s">${esc(L[li].subject)}</span><span class="t">${esc(tName(L[li].teacherId))}</span></td>`;
+  }, classDays(c));
+  const teacherTable=t=>grid('جدول المدرس: '+t.name,(d,p)=>{
+    for(const c of S.classes){
+      const li=r.grid[c.id][d][p];
+      if(li>-1 && L[li].teacherId===t.id)
+        return `<td><span class="s">${esc(cName(c.id))}</span><span class="t">${esc(L[li].subject)}</span></td>`;
+    }
+    return '<td class="free">—</td>';
+  });
+
+  if(view==='class'){ const c=S.classes[viewIdx]||S.classes[0]; if(c) body+=classTable(c); }
+  else if(view==='teacher'){ const t=S.teachers[viewIdx]||S.teachers[0]; if(t) body+=teacherTable(t); }
+  else {
+    const cnt={};
+    S.classes.forEach(c=>r.grid[c.id].forEach(row=>row.forEach(li=>{ if(li>-1) cnt[L[li].teacherId]=(cnt[L[li].teacherId]||0)+1; })));
+    body+=`<div class="card"><h2>الحصص الأسبوعية لكل مدرس</h2>
+      <div class="tablewrap"><table style="min-width:0"><thead><tr><th>المدرس</th><th>المواد</th><th>الحصص</th></tr></thead><tbody>
+      ${S.teachers.map(t=>`<tr><td style="text-align:right">${esc(t.name)}</td>
+        <td style="font-size:11.5px">${(t.subjects||[]).map(esc).join('، ')||'—'}</td>
+        <td><b>${cnt[t.id]||0}</b></td></tr>`).join('')}
+      </tbody></table></div></div>`;
+  }
+  // نسخة الطباعة: كل الجداول
+  body+=`<div id="printAll" style="display:none">
+    <div class="cover">
+      <div class="t1">${esc(S.school||'المدرسة')}</div>
+      <div class="t2">الجدول الأسبوعي للحصص</div>
+      <div class="t3">${S.classes.length} صف · ${S.teachers.length} مدرس · ${cap()} حصة أسبوعياً</div>
+      <div class="t3">تاريخ الإصدار: ${new Date().toLocaleDateString('ar-IQ')}</div>
+    </div>
+    ${S.classes.map(c=>classTable(c)).join('')}
+    ${S.teachers.map(t=>teacherTable(t)).join('')}</div>`;
+
+  app.innerHTML=head+body;
+  bindGen();
+  const pick=document.getElementById('pick');
+  if(pick) pick.addEventListener('change',e=>{ viewIdx=+e.target.value; render(); });
+  app.onclick=(e=>{
+    const b=e.target.closest('[data-v]'); if(!b) return;
+    view=b.dataset.v; viewIdx=0; render();
+  });
+  const bx=document.getElementById('bXls');
+  if(bx) bx.addEventListener('click',exportSchedule);
+  const bpdf=document.getElementById('bPdf');
+  if(bpdf) bpdf.addEventListener('click',()=>sharePDF('all'));
+  const bpc=document.getElementById('bPdfClass');
+  if(bpc) bpc.addEventListener('click',()=>sharePDF('class'));
+  const bpt=document.getElementById('bPdfTeacher');
+  if(bpt) bpt.addEventListener('click',()=>sharePDF('teacher'));
+  const bp=document.getElementById('bPrint');
+  if(bp) bp.addEventListener('click',()=>{
+    const pa=document.getElementById('printAll'); pa.style.display='block';
+    window.print(); setTimeout(()=>pa.style.display='none',600);
+  });
+}
+function bindGen(){
+  const b=document.getElementById('bGen'); if(!b) return;
+  b.addEventListener('click',()=>{
+    const {lessons,missing,load}=buildLessons();
+    if(!S.classes.length) return say('أضف الصفوف أولاً');
+    if(!S.teachers.length) return say('أضف المدرسين أولاً');
+    if(missing.length) return say('يوجد مواد بدون مدرس. راجع تبويب «الإسناد».');
+    const over=S.teachers.map(t=>({
+      n:t.name, w:load[t.id]||0,
+      c:S.days.reduce((a,d,di)=>a+((t.offDays||[]).indexOf(di)>-1?0:Math.min(t.maxPerDay||pOf(d),pOf(d))),0)
+    })).filter(x=>x.w>x.c);
+    if(over.length) return say('حصص أكثر من طاقة المدرس — التوزيع مستحيل:\n\n'
+      + over.map(x=>`• ${x.n}: عليه ${x.w} حصة وطاقته ${x.c} حصة`).join('\n')
+      + '\n\nوزّع بعض صفوفه على مدرس ثاني، أو قلّل حصص المادة.');
+    b.textContent='⏳ جاري التوزيع...'; b.disabled=true;
+    setTimeout(()=>{
+      const data={days:S.days,periodsPerDay:maxP(),dayPeriods:dayList(),classDayPeriods:classDayMap(),
+        classes:S.classes,teachers:S.teachers,
+        lessons,maxSameSubjectPerDay:S.maxSameSubjectPerDay,noBackToBack:S.noBackToBack!==false,
+        noSameTeacherBackToBack:S.noSameTeacherBackToBack===true};
+      S.result=generateSchedule(data,500);
+      view='class'; viewIdx=0; render();
+    },30);
+  });
+}
+/* ---------- ملفات ---------- */
+/* ينزّل أو يشارك ملفاً: مشاركة الآيفون أولاً، ثم تنزيل، ثم نسخ للحافظة */
+/* داخل معاينة Claude التنزيل يمر عبر صلاحية downloads */
+let _dlCap=null;
+try{ if(window.claude && typeof claude.use==='function') _dlCap=claude.use('downloads').catch(()=>null); }catch(e){}
+
+async function saveFile(name,asciiName,text,mime,bom){
+  const data = (text instanceof Uint8Array) ? text : (bom ? '\uFEFF'+text : text);
+  if(_dlCap){
+    try{
+      const dl=await _dlCap;
+      if(dl){
+        const payload=(data instanceof Uint8Array)?new Blob([data],{type:mime}):data;
+        try{ await dl.save({filename:name,data:payload}); return true; }
+        catch(err){ if(err && err.code==='declined') return false; }
+      }
+    }catch(e){}
+  }
+  try{   // الآيفون/أندرويد: ورقة المشاركة تحفظ الاسم العربي كما هو
+    const file=new File([data],name,{type:mime});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:name}); return true;
+    }
+  }catch(e){}
+  try{   // تنزيل مباشر: بعض المتصفحات ترمي الأسماء العربية، فنستعمل بديلاً لاتينياً
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([data],{type:mime}));
+    a.download=asciiName||name; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+    return true;
+  }catch(e){}
+  if(typeof text==='string'){
+    try{ await navigator.clipboard.writeText(text); say('تعذّر حفظ الملف، فنسخنا المحتوى للحافظة'); return false; }catch(e){}
+  }
+  say('تعذّر حفظ الملف على هذا المتصفح');
+  return false;
+}
+const slug=t=>String(t||'ملف').replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'-');
+/* اسم لاتيني آمن مشتق من الاسم العربي، لأن بعض المتصفحات ترفض الأحرف العربية بأسماء الملفات */
+const AR2EN={'ا':'a','أ':'a','إ':'i','آ':'a','ب':'b','ت':'t','ث':'th','ج':'j','ح':'h','خ':'kh',
+ 'د':'d','ذ':'th','ر':'r','ز':'z','س':'s','ش':'sh','ص':'s','ض':'d','ط':'t','ظ':'z','ع':'a','غ':'gh',
+ 'ف':'f','ق':'q','ك':'k','ل':'l','م':'m','ن':'n','ه':'h','و':'w','ي':'y','ى':'a','ة':'a','ء':'','ئ':'','ؤ':'','ّ':''};
+function ascii(t,fallback){
+  const out=String(t||'').split('').map(ch=>{
+    if(/[A-Za-z0-9_-]/.test(ch)) return ch;
+    if(/\s/.test(ch)) return '-';
+    return AR2EN[ch]!==undefined?AR2EN[ch]:'';
+  }).join('').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  return out.slice(0,60) || (fallback||'file');
+}
+const today=()=>new Date().toISOString().slice(0,10);
+
+/* نسخة احتياطية كاملة للمدرسة (يمكن استيرادها) */
+async function exportFile(){
+  const nm=slug(S.school||'مدرسة');
+  await saveFile(nm+'.json', ascii(nm,'school')+'-'+today()+'.json',
+    JSON.stringify(S,null,2), 'application/json');
+}
+
+/* تصدير الجدول كملف Excel/CSV: جداول الصفوف + جداول المدرسين + الحصص */
+async function exportSchedule(){
+  const r=S.result;
+  if(!r) return say('ولّد الجدول أولاً');
+  const L=r.lessons;
+  const tName=id=>{ const t=S.teachers.find(x=>x.id===id); return t?t.name:'—'; };
+  const cName=id=>{ const c=S.classes.find(x=>x.id===id); return c?c.name:'—'; };
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const P=maxP(), rows=[];
+  const head=['اليوم'].concat(Array.from({length:P},(_,i)=>'الحصة '+(i+1)));
+
+  rows.push([S.school||'المدرسة']);
+  rows.push(['الجدول الأسبوعي — '+new Date().toLocaleDateString('ar-IQ')]);
+  rows.push([]);
+
+  rows.push(['== جداول الصفوف ==']);
+  S.classes.forEach(c=>{
+    const cl=classDays(c);
+    rows.push([]); rows.push(['جدول الصف: '+c.name]); rows.push(head);
+    S.days.forEach((d,di)=>{
+      const line=[d];
+      for(let p=0;p<P;p++){
+        if(p>=cl[di]){ line.push('خارج الدوام'); continue; }
+        const li=r.grid[c.id][di][p];
+        line.push(li<0?'فراغ':(L[li].subject+' — '+tName(L[li].teacherId)));
+      }
+      rows.push(line);
+    });
+  });
+
+  rows.push([]); rows.push(['== جداول المدرسين ==']);
+  S.teachers.forEach(t=>{
+    rows.push([]); rows.push(['جدول المدرس: '+t.name]); rows.push(head);
+    S.days.forEach((d,di)=>{
+      const line=[d];
+      for(let p=0;p<P;p++){
+        if(p>=pOf(d)){ line.push('خارج الدوام'); continue; }
+        let cell='—';
+        for(const c of S.classes){
+          const li=r.grid[c.id][di][p];
+          if(li>-1 && L[li].teacherId===t.id){ cell=cName(c.id)+' — '+L[li].subject; break; }
+        }
+        line.push(cell);
+      }
+      rows.push(line);
+    });
+  });
+
+  const cnt={};
+  S.classes.forEach(c=>r.grid[c.id].forEach(row=>row.forEach(li=>{ if(li>-1) cnt[L[li].teacherId]=(cnt[L[li].teacherId]||0)+1; })));
+  rows.push([]); rows.push(['== الحصص الأسبوعية ==']); rows.push(['المدرس','المواد','عدد الحصص']);
+  S.teachers.forEach(t=>rows.push([t.name,(t.subjects||[]).join(' / '),cnt[t.id]||0]));
+
+  const csv=rows.map(line=>line.map(q).join(',')).join('\r\n');
+  const nm=slug(S.school||'مدرسة');
+  const ok=await saveFile(nm+'-الجدول.csv', ascii(nm,'school')+'-jadwal-'+today()+'.csv',
+    csv, 'text/csv;charset=utf-8', true);
+  if(ok) say('تم تصدير الجدول. افتح الملف ببرنامج Excel أو Google Sheets.');
+}
+function importFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{
+      const o=JSON.parse(rd.result); o.result=null;
+      newSchool(o); say('تم استيراد "'+(o.school||'المدرسة')+'" كمدرسة جديدة ✓');
+    }catch(err){ say('الملف غير صالح'); } };
+  rd.readAsText(f);
+}
+/* ---------- بناء PDF ومشاركته (يعمل بدون إنترنت) ---------- */
+const FF='-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif';
+
+/* يرسم جدولاً على لوحة بمقاس A4 أفقي ويرجعها */
+function tableCanvas(title,sub,rows){
+  const W=1754,H=1240,m=56;
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const x=cv.getContext('2d');
+  x.fillStyle='#ffffff'; x.fillRect(0,0,W,H);
+  x.direction='rtl'; x.textAlign='center'; x.textBaseline='middle';
+
+  x.textAlign='right';
+  x.fillStyle='#0f766e'; x.font='bold 46px '+FF; x.fillText(title,W-m,m+26);
+  x.fillStyle='#555555'; x.font='26px '+FF;      x.fillText(sub,W-m,m+78);
+  x.textAlign='center';
+
+  const P=maxP(), cols=P+1;
+  const top=m+118, bottom=H-m-34;
+  const dayW=190, cellW=(W-2*m-dayW)/P;
+  const rowH=(bottom-top)/(rows.length+1);
+  const edge=i=> W-m-(i===0?0:dayW+(i-1)*cellW);   // الحافة اليمنى للعمود
+  const wOf=i=> i===0?dayW:cellW;
+
+  // رأس الجدول
+  x.fillStyle='#0f766e'; x.fillRect(m,top,W-2*m,rowH);
+  x.fillStyle='#ffffff'; x.font='bold 25px '+FF;
+  for(let i=0;i<cols;i++) x.fillText(i===0?'اليوم':'الحصة '+i, edge(i)-wOf(i)/2, top+rowH/2);
+
+  // الصفوف
+  rows.forEach((row,ri)=>{
+    const y=top+(ri+1)*rowH;
+    if(ri%2) { x.fillStyle='#f6f8fa'; x.fillRect(m,y,W-2*m,rowH); }
+    x.fillStyle='#eef2f5'; x.fillRect(edge(0)-dayW,y,dayW,rowH);
+    for(let i=0;i<cols;i++){
+      const cx=edge(i)-wOf(i)/2, c=row[i]||{};
+      if(c.off){ x.fillStyle='#e3e7ec'; x.fillRect(edge(i)-wOf(i),y,wOf(i),rowH); continue; }
+      if(i===0){ x.fillStyle='#111827'; x.font='bold 26px '+FF; x.fillText(c.a||'',cx,y+rowH/2); continue; }
+      if(!c.a){ x.fillStyle='#9aa3ad'; x.font='22px '+FF; x.fillText('—',cx,y+rowH/2); continue; }
+      x.fillStyle='#111827'; x.font='bold 23px '+FF;
+      fitLines(x,c.a,cx,y+rowH/2-(c.b?14:0),wOf(i)-14,25);
+      if(c.b){ x.fillStyle='#6b7280'; x.font='20px '+FF; fitLines(x,c.b,cx,y+rowH/2+20,wOf(i)-14,22); }
+    }
+  });
+
+  // الشبكة
+  x.strokeStyle='#c9d1d9'; x.lineWidth=1.6;
+  for(let r=0;r<=rows.length+1;r++){ const y=top+r*rowH; x.beginPath(); x.moveTo(m,y); x.lineTo(W-m,y); x.stroke(); }
+  for(let i=0;i<=cols;i++){ const px=i===cols?m:edge(i); x.beginPath(); x.moveTo(px,top); x.lineTo(px,bottom); x.stroke(); }
+  x.strokeStyle='#0f766e'; x.lineWidth=3; x.strokeRect(m,top,W-2*m,bottom-top);
+
+  x.fillStyle='#9aa3ad'; x.font='19px '+FF; x.textAlign='center';
+  x.fillText('أُعدّ بواسطة تطبيق موزّع الحصص',W/2,H-m+4);
+  return cv;
+}
+
+/* يكتب نصاً وإن طال قسّمه سطرين */
+function fitLines(ctx,text,cx,cy,maxW,lh){
+  if(ctx.measureText(text).width<=maxW){ ctx.fillText(text,cx,cy); return; }
+  const w=String(text).split(' ');
+  let a='',b='';
+  for(const t of w){ if(ctx.measureText((a?a+' ':'')+t).width<=maxW && !b) a=(a?a+' ':'')+t; else b=(b?b+' ':'')+t; }
+  ctx.fillText(a,cx,cy-lh/2);
+  let bb=b; while(bb && ctx.measureText(bb+'…').width>maxW) bb=bb.slice(0,-1);
+  ctx.fillText(bb===b?b:bb+'…',cx,cy+lh/2);
+}
+
+const cvToJpeg=cv=>new Promise(res=>cv.toBlob(b=>b.arrayBuffer().then(ab=>res(new Uint8Array(ab))),'image/jpeg',0.72));
+
+/* يركّب ملف PDF من صور JPEG، صفحة لكل صورة */
+function buildPDF(images,pw,ph){
+  const chunks=[]; let len=0;
+  const put=u=>{ chunks.push(u); len+=u.length; };
+  const S=s=>{ const a=new Uint8Array(s.length); for(let i=0;i<s.length;i++) a[i]=s.charCodeAt(i)&255; return a; };
+  const N=images.length, off=[];
+  const obj=(n,body)=>{ off[n]=len; put(S(n+' 0 obj\n'+body+'\nendobj\n')); };
+
+  put(S('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'));
+  const kids=[]; for(let i=0;i<N;i++) kids.push((3+i*3)+' 0 R');
+  obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2,'<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+N+' >>');
+  for(let i=0;i<N;i++){
+    const pg=3+i*3, ct=pg+1, im=pg+2;
+    obj(pg,'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+pw+' '+ph+'] '
+      +'/Resources << /XObject << /Im0 '+im+' 0 R >> >> /Contents '+ct+' 0 R >>');
+    const cs='q '+pw+' 0 0 '+ph+' 0 0 cm /Im0 Do Q';
+    obj(ct,'<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream');
+    const img=images[i];
+    off[im]=len;
+    put(S(im+' 0 obj\n<< /Type /XObject /Subtype /Image /Width '+img.w+' /Height '+img.h
+      +' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+img.d.length+' >>\nstream\n'));
+    put(img.d);
+    put(S('\nendstream\nendobj\n'));
+  }
+  const xref=len, total=3+N*3;
+  let t='xref\n0 '+total+'\n0000000000 65535 f \n';
+  for(let n=1;n<total;n++) t+=String(off[n]||0).padStart(10,'0')+' 00000 n \n';
+  t+='trailer\n<< /Size '+total+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n';
+  put(S(t));
+
+  const out=new Uint8Array(len); let k=0;
+  chunks.forEach(c=>{ out.set(c,k); k+=c.length; });
+  return out;
+}
+
+/* يجمع صفحات الجدول: صفحة لكل صف ثم صفحة لكل مدرس */
+function schedulePages(scope){
+  const r=S.result, L=r.lessons, P=maxP();
+  const tName=id=>{ const t=S.teachers.find(x=>x.id===id); return t?t.name:'—'; };
+  const cName=id=>{ const c=S.classes.find(x=>x.id===id); return c?c.name:'—'; };
+  const sub=S.school||'';
+  const pages=[];
+  const want=k=>scope==='all'||scope===k;
+
+  if(want('class')) S.classes.forEach(c=>{
+    const cl=classDays(c);
+    const rows=S.days.map((d,di)=>{
+      const line=[{a:d}];
+      for(let p=0;p<P;p++){
+        if(p>=cl[di]){ line.push({off:true}); continue; }
+        const li=r.grid[c.id][di][p];
+        line.push(li<0?{}:{a:L[li].subject,b:tName(L[li].teacherId)});
+      }
+      return line;
+    });
+    pages.push(tableCanvas('جدول '+c.name,sub,rows));
+  });
+
+  if(want('teacher')) S.teachers.forEach(t=>{
+    const rows=S.days.map((d,di)=>{
+      const line=[{a:d}];
+      for(let p=0;p<P;p++){
+        if(p>=pOf(d)){ line.push({off:true}); continue; }
+        let cell={};
+        for(const c of S.classes){
+          const li=r.grid[c.id][di][p];
+          if(li>-1 && L[li].teacherId===t.id){ cell={a:cName(c.id),b:L[li].subject}; break; }
+        }
+        line.push(cell);
+      }
+      return line;
+    });
+    pages.push(tableCanvas('جدول المدرس: '+t.name,sub,rows));
+  });
+  return pages;
+}
+
+/* يبني PDF ويفتح ورقة المشاركة (واتساب، الملفات، البريد...) */
+async function sharePDF(scope){
+  if(!S.result) return say('ولّد الجدول أولاً');
+  const btns=Array.from(document.querySelectorAll('#bPdf,#bPdfClass,#bPdfTeacher'));
+  btns.forEach(b=>{ b.disabled=true; b.dataset.old=b.textContent; b.textContent='⏳ جاري التجهيز...'; });
+  try{
+    const cvs=schedulePages(scope);
+    const imgs=[];
+    for(const cv of cvs) imgs.push({w:cv.width,h:cv.height,d:await cvToJpeg(cv)});
+    const pdf=buildPDF(imgs,842,595);          // A4 أفقي
+    const nm=slug(S.school||'مدرسة');
+    const label=scope==='class'?'جداول-الصفوف':scope==='teacher'?'جداول-المدرسين':'الجدول-الأسبوعي';
+    await saveFile(nm+'-'+label+'.pdf', ascii(nm,'school')+'-jadwal-'+today()+'.pdf',
+      pdf, 'application/pdf');
+  }catch(e){ say('تعذّر إنشاء ملف PDF: '+e.message); }
+  btns.forEach(b=>{ b.disabled=false; if(b.dataset.old) b.textContent=b.dataset.old; });
+}
+
+/* ---------- تشغيل ---------- */
+load();
+if(!Object.keys(DB.schools||{}).length){      // أول تشغيل: نحمّل المدرسة الجاهزة
+  DB.active=uid(); S=Object.assign(DEF(),JSON.parse(JSON.stringify(SEED)));
+  DB.schools[DB.active]=S; saveDB();
+}else if(!DB.active){ DB.active=uid(); DB.schools[DB.active]=S; saveDB(); }
+render();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
