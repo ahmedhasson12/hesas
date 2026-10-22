@@ -125,16 +125,50 @@ details[open] summary{border-bottom:1px solid var(--line)}
 .seg{display:flex;gap:6px;background:var(--bg);padding:4px;border-radius:999px;border:1px solid var(--line);margin-bottom:10px}
 .seg button{flex:1;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:13px;padding:8px;border-radius:999px;font-family:inherit}
 .seg button.on{background:var(--brand);color:#fff}
+/* زر حذف واضح بدل علامة ✕ */
+.del{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:transparent;
+  color:var(--danger);font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;
+  border-radius:999px;cursor:pointer;min-height:38px;white-space:nowrap}
+.del:active{background:rgba(185,28,28,.08)}
+.del svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fieldlbl{font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:4px;display:block}
+/* بطاقة مدرس */
+.thead{display:flex;gap:10px;align-items:flex-start}
+.avatar{flex:0 0 42px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;
+  color:#fff;font-weight:800;font-size:15px;margin-top:18px}
+.tfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;
+  margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.loadbig{font-size:13px;font-weight:800;color:var(--brand)}
+/* شريط إحصاءات */
+.stats{display:flex;gap:8px;margin-bottom:12px}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:10px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:19px;color:var(--brand);line-height:1.3}
+.stat span{font-size:11px;color:var(--muted)}
+/* بحث */
+.srch{position:relative;margin-top:10px}
+.srch input{padding-right:34px}
+.srch::before{content:'🔎';position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6}
+/* إشعار سريع */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 24px);
+  z-index:120;background:#111827;color:#fff;padding:11px 18px;border-radius:999px;font-size:13.5px;
+  font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);opacity:0;transition:opacity .2s,bottom .2s;
+  max-width:90vw;text-align:center}
+.toast.on{opacity:1;bottom:calc(env(safe-area-inset-bottom) + 34px)}
+@media(prefers-color-scheme:dark){.toast{background:#e8edf5;color:#0b1220}}
 .dayp{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .dayp>div{flex:1 1 86px;text-align:center;border:1px solid var(--line);border-radius:10px;padding:6px 4px;background:var(--bg)}
 .dayp span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
 .dayp input{padding:7px 4px;text-align:center;font-weight:700;background:var(--card)}
 td.off{background:var(--line);opacity:.45}
 .ovl{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:22px}
-.ovl .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 16px;width:100%;max-width:360px;box-shadow:var(--shadow)}
-.ovl p{margin:0 0 14px;font-size:14.5px;line-height:1.8;white-space:pre-wrap}
-.ovl .btns{margin:0}
-.ovl .btns .btn{flex:1}
+.ovl .box{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 18px;width:100%;max-width:370px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.ovl .ico{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:21px;margin:0 auto 12px}
+.ovl h3{margin:0 0 6px;font-size:16.5px;text-align:center}
+.ovl p{margin:0 0 16px;font-size:14px;line-height:1.75;white-space:pre-wrap;text-align:center;color:var(--muted)}
+.ovl .btns{margin:0;flex-direction:column}
+.ovl .btns .btn{width:100%;padding:13px}
+.ovl .btn.danger{background:var(--danger);color:#fff;border:0}
 .welcome{
   position:relative;overflow:hidden;text-align:center;background:#fdf7ee;
   border:1px solid var(--line);border-radius:var(--r);padding:26px 18px;margin-bottom:12px;box-shadow:var(--shadow)
@@ -660,7 +694,7 @@ const SEED={"school":"مدرسة جواد الأئمة الابتدائية","st
 const DEF=()=>({ school:'', stage:'متوسطة', days:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'],
   periodsPerDay:6, dayP:{}, maxSameSubjectPerDay:2, classes:[], plans:{}, teachers:[], assign:{}, result:null });
 let S=DEF();
-let tab='school', view='class', viewIdx=0, secN=0, pStage='ابتدائية', pGrade='';
+let tab='school', view='class', viewIdx=0, secN=0, pStage='ابتدائية', pGrade='', tQuery='';
 
 /* مكتبة المدارس: كل مدرسة محفوظة لحالها ونقدر ننتقل بينها */
 const DBKEY='hesas_db_v1';
@@ -763,21 +797,44 @@ function buildLessons(){
 }
 /* ===================== العرض ===================== */
 /* نافذة تأكيد/تنبيه داخلية — نوافذ المتصفح الجاهزة محجوبة بداخل بعض التطبيقات */
-function modal(msg,isConfirm){
+function modal(msg,kind,opt){
+  opt=opt||{};
+  const danger = kind==='danger';
+  const isConfirm = kind==='danger'||kind==='confirm';
   return new Promise(res=>{
     const o=document.createElement('div'); o.className='ovl';
-    o.innerHTML='<div class="box"><p></p><div class="btns">'
-      +'<button class="btn" data-y>'+(isConfirm?'نعم، تأكيد':'حسناً')+'</button>'
+    const ico = danger?'🗑️' : (kind==='confirm'?'❓':'ℹ️');
+    const bg  = danger?'background:#fee2e2' : (kind==='confirm'?'background:var(--brand-soft)':'background:var(--brand-soft)');
+    o.innerHTML='<div class="box">'
+      +'<div class="ico" style="'+bg+'">'+ico+'</div>'
+      +'<h3></h3><p></p><div class="btns">'
+      +'<button class="btn'+(danger?' danger':'')+'" data-y>'+(opt.yes||(isConfirm?(danger?'نعم، احذف':'تأكيد'):'حسناً'))+'</button>'
       +(isConfirm?'<button class="btn sec" data-n>إلغاء</button>':'')+'</div></div>';
-    o.querySelector('p').textContent=msg;
+    o.querySelector('h3').textContent = opt.title || (danger?'تأكيد الحذف':(isConfirm?'تأكيد':'تنبيه'));
+    o.querySelector('p').textContent = msg;
     o.addEventListener('click',e=>{
       if(e.target.closest('[data-y]')){ o.remove(); res(true); }
       else if(e.target.closest('[data-n]')||e.target===o){ o.remove(); res(false); }
     });
     document.body.appendChild(o);
+    setTimeout(()=>{ const b=o.querySelector('[data-y]'); if(b) b.focus(); },50);
   });
 }
-const say=m=>modal(m,false), ask=m=>modal(m,true);
+const say  = (m,t)=>modal(m,'info',{title:t});
+const ask  = (m,t)=>modal(m,'confirm',{title:t});
+const askDel = (m,t,yes)=>modal(m,'danger',{title:t||'تأكيد الحذف',yes:yes||'نعم، احذف'});
+
+/* إشعار سريع لا يوقف العمل */
+let _toastT=null;
+function toast(msg){
+  let el=document.getElementById('toastBox');
+  if(!el){ el=document.createElement('div'); el.id='toastBox'; el.className='toast'; document.body.appendChild(el); }
+  el.textContent=msg;
+  requestAnimationFrame(()=>el.classList.add('on'));
+  clearTimeout(_toastT);
+  _toastT=setTimeout(()=>el.classList.remove('on'),2200);
+}
+const TRASH='<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>';
 const app=document.getElementById('app');
 document.getElementById('tabs').addEventListener('click',e=>{
   const b=e.target.closest('button[data-t]'); if(!b) return;
@@ -798,7 +855,13 @@ function render(){
 /* ---------- 1. المدرسة ---------- */
 function viewSchool(){
   const schools=schoolList();
+  const nPer=S.classes.reduce((a,c)=>a+planOf(c.id).reduce((x,r)=>x+(Number(r.periods)||0),0),0);
   app.innerHTML=`
+  ${S.classes.length||S.teachers.length?`<div class="stats">
+    <div class="stat"><b>${S.classes.length}</b><span>صف</span></div>
+    <div class="stat"><b>${S.teachers.length}</b><span>مدرس</span></div>
+    <div class="stat"><b>${nPer}</b><span>حصة أسبوعياً</span></div>
+  </div>`:''}
   ${schools.length>0?`<div class="card">
     <h2>مدارسي <span class="pill">${schools.length}</span></h2>
     <p class="hint">اختر مدرسة محفوظة، أو أنشئ وحدة جديدة. كل مدرسة تحتفظ بصفوفها ومدرسيها وجدولها.</p>
@@ -862,10 +925,11 @@ function viewSchool(){
       ${S.classes.length?S.classes.map(c=>`
         <div class="item"><div class="top">
           <div style="flex:1 1 auto;min-width:0">
+          <span class="fieldlbl">اسم الصف</span>
           <input type="text" value="${esc(c.name)}" data-cn="${c.id}" style="font-weight:700;background:var(--card)">
-          <div class="meta">${planOf(c.id).reduce((a,b)=>a+Number(b.periods||0),0)} / ${cap()} حصة · ${planOf(c.id).length} مادة</div></div>
-          <button class="x" data-del="${c.id}">✕</button>
-        </div></div>`).join(''):'<p class="hint">لا توجد صفوف بعد.</p>'}
+          <div class="meta">${planOf(c.id).reduce((a,b)=>a+Number(b.periods||0),0)} حصة · ${planOf(c.id).length} مادة</div></div>
+          <button class="del" data-del="${c.id}" style="margin-top:18px">${TRASH} حذف</button>
+        </div></div>`).join(''):'<p class="hint">لا توجد صفوف بعد. أضف صفاً من الأعلى.</p>'}
     </div>
   </div>
 
@@ -917,10 +981,12 @@ function viewSchool(){
   app.onclick=(async e=>{
     const d=e.target.closest('[data-del]'); if(!d) return;
     const id=d.dataset.del;
-    if(!await ask('حذف هذا الصف وكل مواده؟')) return;
+    const cc=S.classes.find(x=>x.id===id);
+    if(!await askDel('سيُحذف "'+(cc?cc.name:'الصف')+'" مع خطة مواده. لا يمكن التراجع.','حذف الصف؟')) return;
     S.classes=S.classes.filter(c=>c.id!==id); delete S.plans[id];
     S.teachers.forEach(t=>t.classes=(t.classes||[]).filter(x=>x!==id));
-    S.result=null; render();
+    Object.keys(S.assign).forEach(k=>{ if(k.indexOf(id+'|')===0) delete S.assign[k]; });
+    S.result=null; render(); toast('تم حذف '+(cc?cc.name:'الصف'));
   });
   const sSel=document.getElementById('iSchool');
   if(sSel) sSel.addEventListener('change',e=>gotoSchool(e.target.value));
@@ -929,27 +995,27 @@ function viewSchool(){
   const bCopy=document.getElementById('bCopySchool');
   if(bCopy) bCopy.addEventListener('click',()=>{
     const cp=JSON.parse(JSON.stringify(S)); cp.school=(cp.school||'مدرسة')+' — نسخة'; cp.result=null;
-    newSchool(cp); say('تم إنشاء نسخة. عدّل عليها بحرية والأصل محفوظ.');
+    newSchool(cp); toast('تم إنشاء نسخة — الأصل محفوظ');
   });
   const bSeed=document.getElementById('bSeedSchool');
   if(bSeed) bSeed.addEventListener('click',()=>{
-    newSchool(JSON.parse(JSON.stringify(SEED))); say('تم استرجاع مدرسة جواد الأئمة ✓');
+    newSchool(JSON.parse(JSON.stringify(SEED))); toast('تم استرجاع مدرسة جواد الأئمة');
   });
   const bDel=document.getElementById('bDelSchool');
   if(bDel) bDel.addEventListener('click',async()=>{
-    if(!await ask('حذف مدرسة "'+(S.school||'بلا اسم')+'" وكل بياناتها؟')) return;
+    if(!await askDel('سيُحذف كل ما يخص "'+(S.school||'بلا اسم')+'": صفوفها ومدرسوها وجدولها. لا يمكن التراجع.','حذف المدرسة؟')) return;
     delete DB.schools[DB.active];
     const ids=Object.keys(DB.schools); DB.active=ids[0]||'';
     S=DB.active?Object.assign(DEF(),DB.schools[DB.active]):DEF();
-    saveDB(); secN=0; tab='school'; render(); window.scrollTo(0,0);
+    saveDB(); secN=0; tab='school'; render(); window.scrollTo(0,0); toast('تم حذف المدرسة');
   });
   bind('bExport','click',exportFile);
   bind('bImport','click',()=>document.getElementById('fImport').click());
   bind('fImport','change',importFile);
   bind('bReset','click',async()=>{
-    if(!await ask('راح تنمسح كل المدارس المحفوظة ببياناتها كلها. متأكد؟')) return;
+    if(!await askDel('سيُحذف كل شيء: '+schoolList().length+' مدرسة ببياناتها كاملة. لا يمكن التراجع.\n\nننصحك بتصدير نسخة احتياطية أولاً.','مسح كل المدارس؟','نعم، امسح الكل')) return;
     try{ localStorage.removeItem(KEY); localStorage.removeItem(DBKEY); }catch(e){}
-    DB={active:'',schools:{}}; S=DEF(); secN=0; tab='school'; view='class'; viewIdx=0;
+    DB={active:'',schools:{}}; S=DEF(); secN=0; tab='school'; view='class'; viewIdx=0; tQuery='';
     document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.t==='school'));
     render(); window.scrollTo(0,0);
   });
@@ -1016,9 +1082,9 @@ function viewPlans(){
     }).join('')}
   </div>`;
   document.getElementById('bTplAll').addEventListener('click',async()=>{
-    if(!await ask('راح ترجع مواد كل الصفوف للقوالب الرسمية وتروح أي تعديلات سويتها. متأكد؟')) return;
+    if(!await ask('ستُستبدل مواد كل الصفوف بالخطة الرسمية، وتضيع أي تعديلات أجريتها عليها.','إرجاع القوالب الرسمية؟')) return;
     S.classes.forEach(c=>{ S.plans[c.id]=tplFor(c.stage,c.grade).map(([subject,periods])=>({subject,periods})); });
-    S.result=null; render();
+    S.result=null; render(); toast('تم إرجاع القوالب الرسمية');
   });
   app.oninput=(e=>{
     const t=e.target; if(!t.dataset.f) return;
@@ -1158,15 +1224,23 @@ function viewTeachers(){
     <h2>المدرسون <span class="pill">${S.teachers.length}</span></h2>
     <p class="hint">حدّد لكل مدرس المواد التي يدرّسها والصفوف التي يدخلها. إذا انتقل مدرس وجاء بديله، بدّل الاسم فقط وتبقى مواده وصفوفه مثل ما هي.</p>
     <div class="btns"><button class="btn" id="bNewT">+ إضافة مدرس</button></div>
+    ${S.teachers.length>5?`<div class="srch"><input type="text" id="tSearch" placeholder="ابحث باسم المدرس أو المادة..." value="${esc(tQuery)}"></div>`:''}
   </div>
   ${!subs.length?'<div class="card"><div class="warn">أضف المواد أولاً من تبويب «المواد» حتى تقدر تختارها للمدرسين.</div></div>':''}
-  ${S.teachers.map((t,ti)=>{
+  ${S.teachers.map((t,ti)=>({t,ti})).filter(({t})=>{
+      const q=tQuery.trim(); if(!q) return true;
+      return (t.name||'').indexOf(q)>-1 || (t.subjects||[]).some(x=>x.indexOf(q)>-1);
+    }).map(({t,ti})=>{
     const load=(tload[t.id]||0);
-    return `<div class="card">
-      <div class="item" style="border:0;padding:0;background:transparent">
-        <div class="top">
+    const hues=[174,201,262,340,24,142,45,300];
+    const hue=hues[ti%hues.length];
+    const ini=String(t.name||'؟').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('');
+    return `<div class="card" data-tcard="${ti}">
+      <div class="thead">
+        <div class="avatar" style="background:hsl(${hue} 55% 42%)">${esc(ini)}</div>
+        <div style="flex:1 1 auto;min-width:0">
+          <span class="fieldlbl">اسم المدرس</span>
           <input type="text" value="${esc(t.name)}" data-tn="${ti}" placeholder="اسم المدرس" style="font-weight:700">
-          <button class="x" data-tdel="${ti}">✕</button>
         </div>
       </div>
       <label>المواد</label>
@@ -1178,13 +1252,30 @@ function viewTeachers(){
       </div>
       <label>أيام عطلته (اختياري)</label>
       <div class="chips">${S.days.map((d,di)=>`<button class="chip ${(t.offDays||[]).indexOf(di)>-1?'on':''}" data-to="${ti}" data-v="${di}">${d}</button>`).join('')}</div>
-      <div class="total"><span>مجموع حصصه الأسبوعية</span><span style="color:var(--brand)">${load} حصة</span></div>
+      <div class="tfoot">
+        <span class="loadbig">${load} حصة أسبوعياً</span>
+        <button class="del" data-tdel="${ti}">${TRASH} حذف المدرس</button>
+      </div>
     </div>`;
   }).join('')}`;
 
+  const sb=document.getElementById('tSearch');
+  if(sb) sb.addEventListener('input',e=>{
+    tQuery=e.target.value;
+    const q=tQuery.trim();
+    app.querySelectorAll('[data-tcard]').forEach(card=>{
+      const i=+card.dataset.tcard, t=S.teachers[i];
+      const hit=!q || (t.name||'').indexOf(q)>-1 || (t.subjects||[]).some(x=>x.indexOf(q)>-1);
+      card.style.display=hit?'':'none';
+    });
+  });
   document.getElementById('bNewT').addEventListener('click',()=>{
     S.teachers.push({id:uid(),name:'مدرس '+(S.teachers.length+1),subjects:[],classes:[],maxPerDay:maxP(),offDays:[]});
-    S.result=null; render();
+    S.result=null; tQuery=''; render();
+    const cards=app.querySelectorAll('[data-tcard]');
+    const last=cards[cards.length-1];
+    if(last){ last.scrollIntoView({behavior:'smooth',block:'center'});
+      const inp=last.querySelector('input[data-tn]'); if(inp){ inp.focus(); inp.select(); } }
   });
   app.oninput=(e=>{
     const t=e.target;
@@ -1196,9 +1287,10 @@ function viewTeachers(){
     const tog=(arr,v)=>{ const i=arr.indexOf(v); i>-1?arr.splice(i,1):arr.push(v); };
     if(b.dataset.tdel!==undefined){
       const tt=S.teachers[+b.dataset.tdel];
-      if(!await ask('حذف "'+(tt?tt.name:'المدرس')+'"؟ المواد المسندة له راح ترجع للتوزيع التلقائي.')) return;
+      if(!await askDel('سيُحذف "'+(tt?tt.name:'المدرس')+'" ومواده المسندة ترجع للتوزيع التلقائي.','حذف المدرس؟')) return;
       if(tt) Object.keys(S.assign).forEach(k=>{ if(S.assign[k]===tt.id) delete S.assign[k]; });
-      S.teachers.splice(+b.dataset.tdel,1); S.result=null; return render();
+      S.teachers.splice(+b.dataset.tdel,1); S.result=null; render();
+      toast('تم حذف '+(tt?tt.name:'المدرس')); return;
     }
     if(b.dataset.ts!==undefined){ const t=S.teachers[+b.dataset.ts]; t.subjects=t.subjects||[]; tog(t.subjects,b.dataset.v); S.result=null; return render(); }
     if(b.dataset.tc!==undefined){ const t=S.teachers[+b.dataset.tc]; t.classes=t.classes||[]; tog(t.classes,b.dataset.v); S.result=null; return render(); }
@@ -1507,7 +1599,7 @@ async function exportSchedule(){
   const nm=slug(S.school||'مدرسة');
   const ok=await saveFile(nm+'-الجدول.csv', ascii(nm,'school')+'-jadwal-'+today()+'.csv',
     csv, 'text/csv;charset=utf-8', true);
-  if(ok) say('تم تصدير الجدول. افتح الملف ببرنامج Excel أو Google Sheets.');
+  if(ok) toast('تم تصدير الجدول بصيغة Excel');
 }
 function importFile(e){
   const f=e.target.files[0]; if(!f) return;
