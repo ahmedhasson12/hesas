@@ -230,6 +230,17 @@ td.off{background:var(--line);opacity:.45}
 
 <script>
 /* ===================== المحرك ===================== */
+/* وزن المادة: 3 = تحتاج تركيزاً عالياً، 2 = متوسطة، 1 = خفيفة
+   تُوضع الثقيلة في أوائل الحصص والخفيفة في أواخرها */
+const LIGHT=['رياضية','فنية','نشيد','موسيق','مهني','كشاف'];
+const HEAVY=['رياضيات','علوم','فيزياء','كيمياء','أحياء','احياء','عربية','عربي','قراءة',
+             'إنكليز','انكليز','انجليز','إنجليز','جيولوج','علم الأرض','فرنس','كردي','منطق','فلسف'];
+function subjWeight(name){
+  const t=String(name||'');
+  for(const k of LIGHT) if(t.indexOf(k)>-1) return 1;
+  for(const k of HEAVY) if(t.indexOf(k)>-1) return 3;
+  return 2;
+}
 function buildContext(data){
   const D=data.days.length;
   /* عدد حصص كل يوم؛ P هو أطول يوم */
@@ -259,11 +270,13 @@ function buildContext(data){
     const v=(data.classDayPeriods||{})[c.id];
     cdp[c.id]=(v&&v.length===D)?v.map(x=>Math.max(0,+x||0)):dayP.slice();
   });
-  return {D,P,dayP,cdp,lessons,lessonsByClass,teachers,maxDay,classes:data.classes,data,adjMin,
+  const weight=lessons.map(l=>subjWeight(l.subject));
+  return {D,P,dayP,cdp,weight,byEffort:data.byEffort!==false,
+          lessons,lessonsByClass,teachers,maxDay,classes:data.classes,data,adjMin,
           noBack:data.noBackToBack!==false, noBackT:data.noSameTeacherBackToBack===true};
 }
 function attemptSchedule(ctx,rnd,noBack,noBackT){
-  const {D,P,dayP,cdp,lessons,lessonsByClass,teachers,maxDay,classes}=ctx, data=ctx.data;
+  const {D,P,dayP,cdp,weight,byEffort,lessons,lessonsByClass,teachers,maxDay,classes}=ctx, data=ctx.data;
   const remaining=lessons.map(l=>l.periods);
   const dailyCount=lessons.map(()=>new Array(D).fill(0));
   const teacherDaily={}; Object.keys(teachers).forEach(id=>teacherDaily[id]=new Array(D).fill(0));
@@ -295,7 +308,11 @@ function attemptSchedule(ctx,rnd,noBack,noBackT){
         list=Array.from(best.values());
         /* دائماً نفضّل مدرساً غير مدرس الحصة السابقة، حتى حين لا نمنعه */
         const rep2=li=>(prevT && lessons[li].teacherId===prevT)?1:0;
-        list.sort((a,b)=>(rep2(a)-rep2(b))||(score(b)-score(a)));
+        /* المواد الثقيلة أولاً والخفيفة آخراً */
+        const dp=cdp[c.id][d]||1;
+        const eff=li=> byEffort ? (weight[li]-2)*((dp-1)-2*p)*3 : 0;
+        const sc2=li=>score(li)+eff(li);
+        list.sort((a,b)=>(rep2(a)-rep2(b))||(sc2(b)-sc2(a)));
         return list;
       });
       const matchTeacher=new Map(), chosen=new Array(classes.length).fill(-1);
@@ -904,6 +921,8 @@ function viewSchool(){
     <div class="chips" style="margin-top:10px">
       <button class="chip ${S.noBackToBack!==false?'on':''}" id="cNoBack">
         ${S.noBackToBack!==false?'✓ ':''}منع حصتين متتاليتين بنفس المادة</button>
+      <button class="chip ${S.byEffort!==false?'on':''}" id="cEffort">
+        ${S.byEffort!==false?'✓ ':''}المواد الصعبة بأوائل الحصص</button>
     </div>
     <div class="good" style="margin-top:12px">أقصى سعة: <b>${cap()}</b> حصة أسبوعياً (${S.days.map(d=>pOf(d)).join(' + ')}).
       وكل صف يأخذ من الأيام بقدر خطته فقط — الصف الذي يكفيه ${S.periodsPerDay} حصص يومياً لا تُعرض له حصة إضافية.</div>
@@ -971,6 +990,7 @@ function viewSchool(){
     S.result=null; render();
   });
   bind('cNoBack','click',()=>{ S.noBackToBack=(S.noBackToBack===false); S.result=null; render(); });
+  bind('cEffort','click',()=>{ S.byEffort=(S.byEffort===false); S.result=null; render(); });
   bind('iSec','change',e=>{ secN=+e.target.value; });
   bind('bAdd','click',()=>{
     const n=addGrade(document.getElementById('iGrade').value);
@@ -1330,6 +1350,7 @@ function viewResult(){
     ${r?`<button class="btn" id="bPdf">📤 مشاركة PDF</button>`:''}</div>
     ${r?`<p class="hint" style="margin:10px 0 0">يبني ملف PDF ويفتح ورقة المشاركة — أرسله واتساب أو احفظه بالملفات.</p>
     <div class="btns">
+      <button class="btn sec" id="bPdfDay">📄 جداول الأيام فقط</button>
       <button class="btn sec" id="bPdfClass">📄 جداول الصفوف فقط</button>
       <button class="btn sec" id="bPdfTeacher">📄 جداول المدرسين فقط</button>
     </div>
@@ -1372,10 +1393,12 @@ function viewResult(){
   }
 
   body+=`<div class="card noprint"><div class="seg">
+    <button data-v="day" class="${view==='day'?'on':''}">حسب اليوم</button>
     <button data-v="class" class="${view==='class'?'on':''}">حسب الصف</button>
     <button data-v="teacher" class="${view==='teacher'?'on':''}">حسب المدرس</button>
     <button data-v="load" class="${view==='load'?'on':''}">الحصص</button>
   </div>`;
+  if(view==='day') body+=`<select class="sel" id="pick">${S.days.map((d,i)=>`<option value="${i}" ${viewIdx===i?'selected':''}>${esc(d)}</option>`).join('')}</select>`;
   if(view==='class') body+=`<select class="sel" id="pick">${S.classes.map((c,i)=>`<option value="${i}" ${viewIdx===i?'selected':''}>${esc(c.name)}</option>`).join('')}</select>`;
   if(view==='teacher') body+=`<select class="sel" id="pick">${S.teachers.map((t,i)=>`<option value="${i}" ${viewIdx===i?'selected':''}>${esc(t.name)}</option>`).join('')}</select>`;
   body+=`</div>`;
@@ -1402,7 +1425,24 @@ function viewResult(){
     return '<td class="free">—</td>';
   });
 
-  if(view==='class'){ const c=S.classes[viewIdx]||S.classes[0]; if(c) body+=classTable(c); }
+  /* جدول يوم واحد لكل صفوف المدرسة: الصفوف أسطر والحصص أعمدة */
+  const dayTable=di=>`<div class="card printblock"><h2>جدول يوم ${esc(S.days[di]||'')}</h2>
+    <div style="font-size:12px;color:var(--muted)">${esc(S.school||'')} — كل الصفوف</div>
+    <div class="tablewrap"><table><thead><tr><th>الصف</th>
+    ${Array.from({length:maxP()},(_,p)=>`<th>الحصة ${p+1}</th>`).join('')}</tr></thead><tbody>
+    ${S.classes.map(c=>{ const cl=classDays(c);
+      return `<tr><td class="daycol">${esc(c.name)}</td>${
+        Array.from({length:maxP()},(_,p)=>{
+          if(p>=cl[di]) return '<td class="off"></td>';
+          const li=r.grid[c.id][di][p];
+          if(li<0) return '<td class="free">فراغ</td>';
+          return `<td><span class="s">${esc(L[li].subject)}</span><span class="t">${esc(tName(L[li].teacherId))}</span></td>`;
+        }).join('')}</tr>`;
+    }).join('')}
+    </tbody></table></div></div>`;
+
+  if(view==='day'){ body+=dayTable(Math.min(viewIdx,S.days.length-1)); }
+  else if(view==='class'){ const c=S.classes[viewIdx]||S.classes[0]; if(c) body+=classTable(c); }
   else if(view==='teacher'){ const t=S.teachers[viewIdx]||S.teachers[0]; if(t) body+=teacherTable(t); }
   else {
     const cnt={};
@@ -1416,6 +1456,7 @@ function viewResult(){
   }
   // نسخة الطباعة: كل الجداول
   body+=`<div id="printAll" style="display:none">
+    ${S.days.map((_,di)=>dayTable(di)).join('')}
     <div class="cover">
       <div class="t1">${esc(S.school||'المدرسة')}</div>
       <div class="t2">الجدول الأسبوعي للحصص</div>
@@ -1437,6 +1478,8 @@ function viewResult(){
   if(bx) bx.addEventListener('click',exportSchedule);
   const bpdf=document.getElementById('bPdf');
   if(bpdf) bpdf.addEventListener('click',()=>sharePDF('all'));
+  const bpd=document.getElementById('bPdfDay');
+  if(bpd) bpd.addEventListener('click',()=>sharePDF('day'));
   const bpc=document.getElementById('bPdfClass');
   if(bpc) bpc.addEventListener('click',()=>sharePDF('class'));
   const bpt=document.getElementById('bPdfTeacher');
@@ -1466,9 +1509,10 @@ function bindGen(){
       const data={days:S.days,periodsPerDay:maxP(),dayPeriods:dayList(),classDayPeriods:classDayMap(),
         classes:S.classes,teachers:S.teachers,
         lessons,maxSameSubjectPerDay:S.maxSameSubjectPerDay,noBackToBack:S.noBackToBack!==false,
+        byEffort:S.byEffort!==false,
         noSameTeacherBackToBack:S.noSameTeacherBackToBack===true};
       S.result=generateSchedule(data,500);
-      view='class'; viewIdx=0; render();
+      view='day'; viewIdx=0; render();
     },30);
   });
 }
@@ -1546,6 +1590,21 @@ async function exportSchedule(){
   rows.push(['الجدول الأسبوعي — '+new Date().toLocaleDateString('ar-IQ')]);
   rows.push([]);
 
+  rows.push(['== جداول الأيام (كل الصفوف) ==']);
+  S.days.forEach((dn,di)=>{
+    rows.push([]); rows.push(['يوم '+dn]);
+    rows.push(['الصف'].concat(Array.from({length:P},(_,i)=>'الحصة '+(i+1))));
+    S.classes.forEach(c=>{
+      const cl=classDays(c), line=[c.name];
+      for(let p=0;p<P;p++){
+        if(p>=cl[di]){ line.push('خارج الدوام'); continue; }
+        const li=r.grid[c.id][di][p];
+        line.push(li<0?'فراغ':(L[li].subject+' — '+tName(L[li].teacherId)));
+      }
+      rows.push(line);
+    });
+  });
+  rows.push([]);
   rows.push(['== جداول الصفوف ==']);
   S.classes.forEach(c=>{
     const cl=classDays(c);
@@ -1603,7 +1662,7 @@ function importFile(e){
 const FF='-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,"Noto Naskh Arabic",Arial,sans-serif';
 
 /* يرسم جدولاً على لوحة بمقاس A4 أفقي ويرجعها */
-function tableCanvas(title,sub,rows){
+function tableCanvas(title,sub,rows,firstHead){
   const W=1754,H=1240,m=56;
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   const x=cv.getContext('2d');
@@ -1625,7 +1684,7 @@ function tableCanvas(title,sub,rows){
   // رأس الجدول
   x.fillStyle='#0f766e'; x.fillRect(m,top,W-2*m,rowH);
   x.fillStyle='#ffffff'; x.font='bold 25px '+FF;
-  for(let i=0;i<cols;i++) x.fillText(i===0?'اليوم':'الحصة '+i, edge(i)-wOf(i)/2, top+rowH/2);
+  for(let i=0;i<cols;i++) x.fillText(i===0?(firstHead||'اليوم'):'الحصة '+i, edge(i)-wOf(i)/2, top+rowH/2);
 
   // الصفوف
   rows.forEach((row,ri)=>{
@@ -1712,6 +1771,19 @@ function schedulePages(scope){
   const pages=[];
   const want=k=>scope==='all'||scope===k;
 
+  if(want('day')) S.days.forEach((dn,di)=>{
+    const rows=S.classes.map(c=>{
+      const cl=classDays(c), line=[{a:c.name}];
+      for(let p=0;p<P;p++){
+        if(p>=cl[di]){ line.push({off:true}); continue; }
+        const li=r.grid[c.id][di][p];
+        line.push(li<0?{}:{a:L[li].subject,b:tName(L[li].teacherId)});
+      }
+      return line;
+    });
+    pages.push(tableCanvas('جدول يوم '+dn,sub+' — كل الصفوف',rows,'الصف'));
+  });
+
   if(want('class')) S.classes.forEach(c=>{
     const cl=classDays(c);
     const rows=S.days.map((d,di)=>{
@@ -1748,7 +1820,7 @@ function schedulePages(scope){
 /* يبني PDF ويفتح ورقة المشاركة (واتساب، الملفات، البريد...) */
 async function sharePDF(scope){
   if(!S.result) return say('ولّد الجدول أولاً');
-  const btns=Array.from(document.querySelectorAll('#bPdf,#bPdfClass,#bPdfTeacher'));
+  const btns=Array.from(document.querySelectorAll('#bPdf,#bPdfDay,#bPdfClass,#bPdfTeacher'));
   btns.forEach(b=>{ b.disabled=true; b.dataset.old=b.textContent; b.textContent='⏳ جاري التجهيز...'; });
   try{
     const cvs=schedulePages(scope);
@@ -1756,7 +1828,8 @@ async function sharePDF(scope){
     for(const cv of cvs) imgs.push({w:cv.width,h:cv.height,d:await cvToJpeg(cv)});
     const pdf=buildPDF(imgs,842,595);          // A4 أفقي
     const nm=slug(S.school||'مدرسة');
-    const label=scope==='class'?'جداول-الصفوف':scope==='teacher'?'جداول-المدرسين':'الجدول-الأسبوعي';
+    const label=scope==='class'?'جداول-الصفوف':scope==='teacher'?'جداول-المدرسين':
+                scope==='day'?'جداول-الأيام':'الجدول-الأسبوعي';
     await saveFile(nm+'-'+label+'.pdf', ascii(nm,'school')+'-jadwal-'+today()+'.pdf',
       pdf, 'application/pdf');
   }catch(e){ say('تعذّر إنشاء ملف PDF: '+e.message); }
